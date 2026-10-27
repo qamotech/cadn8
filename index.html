@@ -13,70 +13,118 @@
 }
 *{box-sizing:border-box}
 html,body{margin:0;padding:0}
-body{background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;padding-bottom:24px}
-header{position:sticky;top:0;z-index:20;background:linear-gradient(135deg,#121828,#1a1030);border-bottom:2px solid var(--orange);padding:10px 14px;display:flex;align-items:center;gap:10px}
-header .logo{font-size:28px}
-header h1{font-size:19px;margin:0;line-height:1.1}
-header p{margin:2px 0 0;color:var(--muted);font-size:12px}
-main{max-width:860px;margin:0 auto;padding:10px}
-.bar{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:8px;margin:0 0 10px}
-.bar .row{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
-button.tool,button.act{border:2px solid var(--line);background:var(--card2);color:var(--ink);border-radius:10px;padding:9px 11px;font-size:14px;font-weight:700;cursor:pointer;min-height:44px;min-width:44px}
+body{background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;padding-bottom:14px}
+header{position:sticky;top:0;z-index:20;background:linear-gradient(135deg,#121828,#1a1030);border-bottom:2px solid var(--orange);padding:6px 10px;display:flex;align-items:center;gap:8px}
+header .logo{font-size:20px}
+header h1{font-size:16px;margin:0;line-height:1.1}
+header p{margin:1px 0 0;color:var(--muted);font-size:11px}
+main{max-width:900px;margin:0 auto;padding:6px}
+.bar{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:6px;margin:0 0 8px}
+.bar .row{display:flex;flex-wrap:wrap;gap:5px;align-items:center}
+button.tool,button.act{border:1.5px solid var(--line);background:var(--card2);color:var(--ink);border-radius:9px;padding:6px 8px;font-size:12px;font-weight:700;cursor:pointer;min-height:36px;min-width:36px}
 button.tool.on{background:var(--orange);color:#14100a;border-color:var(--orange)}
 button.act:active{transform:scale(.97)}
 button.act.teal{background:var(--teal);color:#0b1512;border-color:var(--teal)}
 button.act.danger{background:transparent;color:var(--red);border-color:var(--red)}
 button:disabled{opacity:.4;cursor:default}
-label.lbl{font-size:12px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
-input[type=number],input[type=text]{background:#0d1322;color:var(--ink);border:2px solid var(--line);border-radius:10px;padding:10px;font-size:15px;min-height:44px}
-input[type=number]{width:76px}
+label.lbl{font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+input[type=number],input[type=text]{background:#0d1322;color:var(--ink);border:1.5px solid var(--line);border-radius:9px;padding:7px;font-size:13px;min-height:36px}
+input[type=number]{width:62px}
 input[type=text]{flex:1;min-width:120px}
-.switch{display:inline-flex;align-items:center;gap:6px;font-size:14px;font-weight:700;background:var(--card2);border:2px solid var(--line);border-radius:10px;padding:8px 10px;min-height:44px;cursor:pointer}
-.switch input{width:20px;height:20px;accent-color:var(--orange)}
+.switch{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;background:var(--card2);border:1.5px solid var(--line);border-radius:9px;padding:5px 8px;min-height:36px;cursor:pointer}
+.switch input{width:16px;height:16px;accent-color:var(--orange)}
 #canvasWrap{background:#0d1322;border:2px solid var(--line);border-radius:14px;overflow:hidden;touch-action:none}
 canvas{display:block;width:100%;height:520px;touch-action:none;cursor:crosshair}
-#status{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
-#status .pill{background:var(--card);border:1px solid var(--line);border-radius:999px;padding:7px 12px;font-size:13px;font-weight:700}
+#status{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
+#status .pill{background:var(--card);border:1px solid var(--line);border-radius:999px;padding:4px 9px;font-size:11.5px;font-weight:700}
 #status .pill b{color:var(--gold)}
 .sketch-row{display:flex;gap:8px;align-items:center;background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin:6px 0}
 .sketch-row .nm{flex:1;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.sketch-row button{min-height:40px;padding:6px 10px}
-.small{font-size:13px;color:var(--muted)}
-h3{margin:4px 0 8px;font-size:15px}
+.sketch-row button{min-height:34px;padding:5px 8px}
+.small{font-size:12px;color:var(--muted)}
+h3{margin:3px 0 6px;font-size:14px}
+
+/* ---- Compact stage layout (cycle 37): buttons arranged around the grid ---- */
+#stage{display:flex;gap:6px;align-items:stretch;margin:0 0 8px}
+#toolBar{display:flex;flex-direction:column;gap:5px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:5px}
+#toolBar button.tool{display:flex;flex-direction:column;align-items:center;gap:1px;font-size:15px;line-height:1.15;padding:6px 4px;min-width:46px}
+#toolBar button.tool .tl{display:block;font-size:9px;font-weight:700;letter-spacing:.02em}
+#stageMain{flex:1;min-width:0;display:flex;flex-direction:column}
+#utilBar{margin:0 0 6px}
+#actBar{margin-top:2px}
+@media (max-width:640px){
+  #toolBar button.tool .tl{display:none}
+  #toolBar button.tool{font-size:17px;min-width:40px;padding:7px 2px}
+  canvas{height:56vh}
+}
 </style>
 </head>
 <body>
 <header>
   <div class="logo">📐</div>
   <div>
-    <h1>📐 CADN8 <span id="verPill" style="font-size:12px;color:#0b1512;background:var(--gold);border-radius:999px;padding:3px 9px;vertical-align:middle;letter-spacing:.03em">v1.0.31</span></h1>
+    <h1>📐 CADN8 <span id="verPill" style="font-size:10px;color:#0b1512;background:var(--gold);border-radius:999px;padding:2px 7px;vertical-align:middle;letter-spacing:.03em">v1.0.38</span></h1>
     <p>Quick job-site sketches — rooms, decks, mounting walls</p>
   </div>
 </header>
 <main>
-  <div class="bar" id="toolBar">
-    <div class="row" role="group" aria-label="Tools">
-      <button class="tool on" data-tool="select" title="Select / move">🖱️ Select</button>
-      <button class="tool" data-tool="line" title="Line">📏 Line</button>
-      <button class="tool" data-tool="rect" title="Rectangle">▭ Rect</button>
-      <button class="tool" data-tool="circle" title="Circle">◯ Circle</button>
-      <button class="tool" data-tool="wall" title="Wall (thick line)">🧱 Wall</button>
-      <button class="tool" data-tool="text" title="Text label">🔤 Text</button>
-      <button class="tool" data-tool="measure" title="Measure distance">📐 Measure</button>
-      <button class="tool" data-tool="eraser" title="Tap a shape to delete it">🧽 Eraser</button>
-      <button class="tool" data-tool="pan" title="Pan the canvas">✋ Pan</button>
+  <div id="stage">
+    <div id="toolBar" role="group" aria-label="Tools">
+      <button class="tool on" data-tool="select" title="Select / move">🖱️ <span class="tl">Select</span></button>
+      <button class="tool" data-tool="line" title="Line">📏 <span class="tl">Line</span></button>
+      <button class="tool" data-tool="rect" title="Rectangle">▭ <span class="tl">Rect</span></button>
+      <button class="tool" data-tool="circle" title="Circle">◯ <span class="tl">Circle</span></button>
+      <button class="tool" data-tool="wall" title="Wall (thick line)">🧱 <span class="tl">Wall</span></button>
+      <button class="tool" data-tool="text" title="Text label">🔤 <span class="tl">Text</span></button>
+      <button class="tool" data-tool="measure" title="Measure distance">📐 <span class="tl">Measure</span></button>
+      <button class="tool" data-tool="eraser" title="Tap a shape to delete it">🧽 <span class="tl">Eraser</span></button>
+      <button class="tool" data-tool="pan" title="Pan the canvas">✋ <span class="tl">Pan</span></button>
+    
     </div>
-  </div>
-
-  <div class="bar">
-    <div class="row">
-      <label class="switch"><input type="checkbox" id="gridOn" checked> Grid</label>
+    <div id="stageMain">
+      <div class="bar" id="utilBar">
+        <div class="row">
+          <label class="switch"><input type="checkbox" id="gridOn" checked> Grid</label>
       <label class="switch"><input type="checkbox" id="snapOn" checked> Snap</label>
       <span class="lbl">1 square =</span>
       <input type="number" id="scaleFt" value="1" min="0.1" step="0.1" aria-label="Feet per grid square">
       <span class="lbl">ft</span>
       <button class="act" id="btnUndo" title="Undo">↩️ Undo</button>
       <button class="act" id="btnRedo" title="Redo">↪️ Redo</button>
+        </div>
+      </div>
+      <div id="canvasWrap"><canvas id="cv"></canvas></div>
+      <div id="status">
+    <span class="pill">Cursor: <b id="stCursor">—</b></span>
+    <span class="pill">Selected: <b id="stSel">none</b></span>
+    <span class="pill">Area: <b id="stArea">—</b></span>
+    <span class="pill">Angle: <b id="stAngle">—</b></span>
+    <span class="pill">Total: <b id="stTotal">—</b></span>
+    <span class="pill">Bounds: <b id="stBounds">—</b></span>
+    <span class="pill">Perim: <b id="stPerim">—</b></span>
+    <span class="pill">Cover: <b id="stCover">—</b></span>
+    <span class="pill">Fill: <b id="stFill">—</b></span>
+    <span class="pill">Gap: <b id="stGap">—</b></span>
+    <span class="pill">Edge: <b id="stEdge">—</b></span>
+    <span class="pill">Span: <b id="stSpan">—</b></span>
+    <span class="pill">Short: <b id="stShort">—</b></span>
+    <span class="pill">Diff: <b id="stDiff">—</b></span>
+    <span class="pill">Avg: <b id="stAvg">—</b></span>
+    <span class="pill">Small: <b id="stSmall">—</b></span>
+    <span class="pill">Big: <b id="stBig">—</b></span>
+    <span class="pill">Mid: <b id="stMid">—</b></span>
+    <span class="pill">Diag: <b id="stDiag">—</b></span>
+    <span class="pill">Ratio: <b id="stRatio">—</b></span>
+    <span class="pill">Types: <b id="stTypes">—</b></span>
+    <span class="pill">Measure: <b id="stMeasure">tap two points</b></span>
+    <span class="pill">Shapes: <b id="stCount">0</b></span>
+  
+      </div>
+    </div>
+  </div>
+
+  <div class="bar" id="actBar">
+    <div class="row">
       <button class="act danger" id="btnDelete" title="Delete selected">🗑️ Delete</button>
       <button class="act" id="btnDup" title="Duplicate the selected shape (offset copy)">⧉ Duplicate</button>
       <button class="act" id="btnRotate" title="Rotate the selected shape 90 degrees around its center">↻ Rotate 90°</button>
@@ -109,28 +157,7 @@ h3{margin:4px 0 8px;font-size:15px}
     </div>
   </div>
 
-  <div id="canvasWrap"><canvas id="cv"></canvas></div>
-  <div id="status">
-    <span class="pill">Cursor: <b id="stCursor">—</b></span>
-    <span class="pill">Selected: <b id="stSel">none</b></span>
-    <span class="pill">Area: <b id="stArea">—</b></span>
-    <span class="pill">Angle: <b id="stAngle">—</b></span>
-    <span class="pill">Total: <b id="stTotal">—</b></span>
-    <span class="pill">Bounds: <b id="stBounds">—</b></span>
-    <span class="pill">Perim: <b id="stPerim">—</b></span>
-    <span class="pill">Cover: <b id="stCover">—</b></span>
-    <span class="pill">Fill: <b id="stFill">—</b></span>
-    <span class="pill">Gap: <b id="stGap">—</b></span>
-    <span class="pill">Edge: <b id="stEdge">—</b></span>
-    <span class="pill">Mid: <b id="stMid">—</b></span>
-    <span class="pill">Diag: <b id="stDiag">—</b></span>
-    <span class="pill">Ratio: <b id="stRatio">—</b></span>
-    <span class="pill">Types: <b id="stTypes">—</b></span>
-    <span class="pill">Measure: <b id="stMeasure">tap two points</b></span>
-    <span class="pill">Shapes: <b id="stCount">0</b></span>
-  </div>
-
-  <div class="bar" style="margin-top:10px">
+  <div class="bar" style="margin-top:8px">
     <h3>💾 Sketches (saved on this device)</h3>
     <div class="row">
       <input type="text" id="sketchName" placeholder="Sketch name — e.g. Smith kitchen" aria-label="Sketch name">
@@ -147,7 +174,7 @@ h3{margin:4px 0 8px;font-size:15px}
       <button class="act" id="btnImport">⬆️ Import JSON</button>
       <input type="file" id="fileImport" accept=".json,application/json" hidden>
     </div>
-    <p class="small" style="margin:8px 0 0">Tip: dimensions under each shape come from the scale above. Change “1 square = ft” and every label updates. Tap a shape with Select to move or delete it. Nudge a selected shape with the ◀▲▼▶ buttons or arrow keys (Shift + arrow = a full square). Grow or shrink it with ⤢/⤡ or the +/− keys — it resizes around its center. Tap ⊞ Snap (or press S) to pull a selected shape back onto the nearest grid square. Tap ◎ Center (or press C) to center a selected shape in the current view. Use ⤒ Front / ⤓ Back (or F / B) to layer a selected shape on top of or behind overlapping shapes. Tap ⌂ Origin (or press O) to move a selected shape so its top-left lands on the origin (0,0). Tap 📐 Exact Size (or press E) to type an exact size in feet for a selected shape — width × height for a rect, diameter for a circle, length for a line or wall — resized around its center. Tap ⇋ Flip H / ⇅ Flip V (or press H / V) to mirror a selected line or wall around its center — handy for flipping a slope or run direction; rects and circles are symmetric, so a flip leaves them unchanged. Tap 📍 Exact Pos (or press P) to move a selected shape to an exact position in feet — its top-left X and Y from the origin. Select a text label and tap ✏️ Edit Label (or press T) to rename it in place without deleting and retyping it. Use ↑ Forward / ↓ Backward (or ] / [) to move a selected shape just one layer — swapping with the shape right above or below it — instead of jumping all the way to the front or back. After panning around with ✋ Pan, tap 🧭 Reset View (or press 0) to jump the view straight back to the origin. Tap 🔍 Fit View (or press 9) to center the whole sketch in the view at once — handy after drawing or loading shapes that landed off-screen. Tap 🎯 Focus (or press L) to center the view on just the selected shape without moving it — handy for jumping straight to one shape in a big sketch. Tap ⭐ Keep Only (or press K) to keep just the selected shape and delete every other shape — handy for isolating one part of a sketch; Undo brings the rest back. The Area readout in the status bar shows the selected shape's area and perimeter in real feet — a rect gives its floor area and wall run, a circle its area and circumference, and a line or wall just its length — handy for quick material estimates. The Angle readout next to it shows how steep a selected line or wall runs, from 0° (level) to 90° (straight up) — handy for checking a ramp, pitch, or brace angle at a glance. The Total readout adds up the whole sketch — combined floor area of every rect and circle plus the combined length of every line and wall — handy for a quick whole-job material estimate without adding shapes up one by one. The Bounds readout next to it shows the whole sketch's overall footprint — its combined width × height in feet from the leftmost to the rightmost and topmost to bottommost edge — handy for checking whether a layout fits a room, sheet, or trailer at a glance. The Types readout next to it breaks the sketch down by shape — how many rects, circles, lines, walls, and labels it holds — handy for a quick count before ordering materials or checking nothing was missed. The Mid readout next to it shows the center point of the whole sketch in feet — the middle of its overall footprint — handy for finding the middle of a layout for a centered fixture, mount, or light. The Diag readout next to it shows the corner-to-corner diagonal of the whole sketch's footprint in feet — handy for checking a layout is square (equal diagonals) or whether it fits corner-to-corner in a trailer, sheet, or room. The Ratio readout next to it shows the aspect ratio of the whole sketch's footprint — its width divided by its height, like 1.33 : 1 for a 16 × 12 ft room — handy for scaling a layout up or down, matching it to a sheet or screen, or checking a photo or print will fit without stretching. The Perim readout next to it shows the distance around the whole sketch's footprint in feet — twice its width plus twice its height — handy for estimating trim, edging, fencing, or tape needed to go around a layout. The Cover readout next to it shows the footprint area of the whole sketch in square feet — its overall width times its overall height — handy for estimating flooring, sheet goods, paint coverage, or drop cloths needed to cover a layout's full footprint. The Fill readout next to it shows what share of that footprint the shapes themselves actually cover, as a percent — a single room filling its outline reads 100%, while gaps and open space inside the outline pull it down — handy for spotting wasted space in a layout or estimating how much of a sheet, floor, or lot is really in use. The Gap readout next to it shows that same open space as an absolute number — the footprint area minus the area the shapes themselves cover, in square feet — handy for estimating leftover sheet goods, offcuts, or how much open floor a layout leaves in real numbers instead of just a percent. The Edge readout next to it shows the total edge length of every shape in the sketch added together — each rect's perimeter, each circle's circumference, and each line or wall's length, in feet — handy for estimating trim, edging, tape, or cut length across a whole layout, not just around its outside footprint.</p>
+    <p class="small" style="margin:8px 0 0">Tip: dimensions under each shape come from the scale above. Change “1 square = ft” and every label updates. Tap a shape with Select to move or delete it. Nudge a selected shape with the ◀▲▼▶ buttons or arrow keys (Shift + arrow = a full square). Grow or shrink it with ⤢/⤡ or the +/− keys — it resizes around its center. Tap ⊞ Snap (or press S) to pull a selected shape back onto the nearest grid square. Tap ◎ Center (or press C) to center a selected shape in the current view. Use ⤒ Front / ⤓ Back (or F / B) to layer a selected shape on top of or behind overlapping shapes. Tap ⌂ Origin (or press O) to move a selected shape so its top-left lands on the origin (0,0). Tap 📐 Exact Size (or press E) to type an exact size in feet for a selected shape — width × height for a rect, diameter for a circle, length for a line or wall — resized around its center. Tap ⇋ Flip H / ⇅ Flip V (or press H / V) to mirror a selected line or wall around its center — handy for flipping a slope or run direction; rects and circles are symmetric, so a flip leaves them unchanged. Tap 📍 Exact Pos (or press P) to move a selected shape to an exact position in feet — its top-left X and Y from the origin. Select a text label and tap ✏️ Edit Label (or press T) to rename it in place without deleting and retyping it. Use ↑ Forward / ↓ Backward (or ] / [) to move a selected shape just one layer — swapping with the shape right above or below it — instead of jumping all the way to the front or back. After panning around with ✋ Pan, tap 🧭 Reset View (or press 0) to jump the view straight back to the origin. Tap 🔍 Fit View (or press 9) to center the whole sketch in the view at once — handy after drawing or loading shapes that landed off-screen. Tap 🎯 Focus (or press L) to center the view on just the selected shape without moving it — handy for jumping straight to one shape in a big sketch. Tap ⭐ Keep Only (or press K) to keep just the selected shape and delete every other shape — handy for isolating one part of a sketch; Undo brings the rest back. The Area readout in the status bar shows the selected shape's area and perimeter in real feet — a rect gives its floor area and wall run, a circle its area and circumference, and a line or wall just its length — handy for quick material estimates. The Angle readout next to it shows how steep a selected line or wall runs, from 0° (level) to 90° (straight up) — handy for checking a ramp, pitch, or brace angle at a glance. The Total readout adds up the whole sketch — combined floor area of every rect and circle plus the combined length of every line and wall — handy for a quick whole-job material estimate without adding shapes up one by one. The Bounds readout next to it shows the whole sketch's overall footprint — its combined width × height in feet from the leftmost to the rightmost and topmost to bottommost edge — handy for checking whether a layout fits a room, sheet, or trailer at a glance. The Types readout next to it breaks the sketch down by shape — how many rects, circles, lines, walls, and labels it holds — handy for a quick count before ordering materials or checking nothing was missed. The Mid readout next to it shows the center point of the whole sketch in feet — the middle of its overall footprint — handy for finding the middle of a layout for a centered fixture, mount, or light. The Diag readout next to it shows the corner-to-corner diagonal of the whole sketch's footprint in feet — handy for checking a layout is square (equal diagonals) or whether it fits corner-to-corner in a trailer, sheet, or room. The Ratio readout next to it shows the aspect ratio of the whole sketch's footprint — its width divided by its height, like 1.33 : 1 for a 16 × 12 ft room — handy for scaling a layout up or down, matching it to a sheet or screen, or checking a photo or print will fit without stretching. The Perim readout next to it shows the distance around the whole sketch's footprint in feet — twice its width plus twice its height — handy for estimating trim, edging, fencing, or tape needed to go around a layout. The Cover readout next to it shows the footprint area of the whole sketch in square feet — its overall width times its overall height — handy for estimating flooring, sheet goods, paint coverage, or drop cloths needed to cover a layout's full footprint. The Fill readout next to it shows what share of that footprint the shapes themselves actually cover, as a percent — a single room filling its outline reads 100%, while gaps and open space inside the outline pull it down — handy for spotting wasted space in a layout or estimating how much of a sheet, floor, or lot is really in use. The Gap readout next to it shows that same open space as an absolute number — the footprint area minus the area the shapes themselves cover, in square feet — handy for estimating leftover sheet goods, offcuts, or how much open floor a layout leaves in real numbers instead of just a percent. The Edge readout next to it shows the total edge length of every shape in the sketch added together — each rect's perimeter, each circle's circumference, and each line or wall's length, in feet — handy for estimating trim, edging, tape, or cut length across a whole layout, not just around its outside footprint. The Span readout next to it shows the longest side of the whole sketch's footprint in feet — the larger of its width and height — handy for checking the longest dimension a layout needs, like whether it fits a trailer bed, a sheet, or along one wall. The Short readout next to it shows the shortest side of that same footprint in feet — the smaller of its width and height — handy for checking the tight dimension a layout needs, like whether it clears a doorway, a gate, or the narrow end of a sheet or trailer. The Diff readout next to it shows how far that footprint is from square — its longest side minus its shortest side, in feet — so a 16 × 12 ft room reads 4 ft and a perfectly square footprint reads 0 ft, handy for spotting how much a layout leans one way before you commit to it. The Avg readout next to it shows the average floor area per area shape in the sketch — the total floor area of its rects and circles divided by how many of them there are, in square feet — handy for comparing room sizes at a glance or estimating a typical bay, stall, or pad size without doing the division yourself; lines, walls, and labels have no floor area, so they are left out of the average. The Small readout next to it shows the smallest floor area among the sketch's area shapes in square feet — the little room, closet, or pad in a layout — handy for checking the tightest space still works or spotting a shape drawn too small by mistake; lines, walls, and labels have no floor area, so they are left out, and a sketch with no rects or circles shows a dash. The Big readout next to it shows the largest floor area among those same area shapes in square feet — the main room or biggest pad in a layout — handy for checking the largest space drives the material order or spotting a shape drawn too big by mistake; lines, walls, and labels are left out, and a sketch with no rects or circles shows a dash.</p>
   </div>
 </main>
 
@@ -155,7 +182,7 @@ h3{margin:4px 0 8px;font-size:15px}
 "use strict";
 /* ================= State ================= */
 const APP_NAME = "CADN8";
-const APP_VERSION = "1.0.31";          // bump patch each upgrade-loop cycle
+const APP_VERSION = "1.0.38";          // bump patch each upgrade-loop cycle
 const GRID = 40;                       // px per grid square
 let shapes = [];                       // drawing objects, world px coords
 let selectedId = null;
@@ -293,6 +320,54 @@ function edgeNumbers(list){ // whole-sketch edge: total edge length of every sha
   return { count: src.length, edgeFt };
 }
 function edgeSketch(){ return edgeNumbers(shapes); }
+function spanNumbers(list){ // whole-sketch span: longest side of the combined bounds envelope, in ft — max(width, height)
+  const b = boundsNumbers(list); if (!b) return null;
+  return { count: b.count, spanFt: Math.max(b.wFt, b.hFt) };
+}
+function spanSketch(){ return spanNumbers(shapes); }
+function shortNumbers(list){ // whole-sketch short side: shortest side of the combined bounds envelope, in ft — min(width, height)
+  const b = boundsNumbers(list); if (!b) return null;
+  return { count: b.count, shortFt: Math.min(b.wFt, b.hFt) };
+}
+function shortSketch(){ return shortNumbers(shapes); }
+function diffNumbers(list){ // whole-sketch diff: gap between the longest and shortest sides of the combined bounds envelope, in ft — abs(width - height); 0 means the footprint is square
+  const b = boundsNumbers(list); if (!b) return null;
+  return { count: b.count, diffFt: Math.abs(b.wFt - b.hFt) };
+}
+function diffSketch(){ return diffNumbers(shapes); }
+function avgNumbers(list){ // whole-sketch average: average floor area per area-bearing shape (rects and circles only), in sq ft — lines/walls/labels have no floor area, so they are left out of the count
+  const src = Array.isArray(list) ? list : shapes;
+  let total = 0, n = 0;
+  for (const s of src){
+    const a = areaNumbers(s); if (!a || a.areaSqFt === null || a.areaSqFt === undefined) continue;
+    total += a.areaSqFt; n++;
+  }
+  if (!n) return null;
+  return { count: n, avgSqFt: total / n };
+}
+function avgSketch(){ return avgNumbers(shapes); }
+function smallNumbers(list){ // whole-sketch smallest: smallest floor area among area-bearing shapes (rects and circles only), in sq ft — lines/walls/labels have no floor area, so they are left out of the count
+  const src = Array.isArray(list) ? list : shapes;
+  let smallest = Infinity, n = 0;
+  for (const s of src){
+    const a = areaNumbers(s); if (!a || a.areaSqFt === null || a.areaSqFt === undefined) continue;
+    if (a.areaSqFt < smallest) smallest = a.areaSqFt; n++;
+  }
+  if (!n) return null;
+  return { count: n, smallSqFt: smallest };
+}
+function smallSketch(){ return smallNumbers(shapes); }
+function bigNumbers(list){ // whole-sketch biggest: largest floor area among area-bearing shapes (rects and circles only), in sq ft — lines/walls/labels have no floor area, so they are left out of the count
+  const src = Array.isArray(list) ? list : shapes;
+  let biggest = -Infinity, n = 0;
+  for (const s of src){
+    const a = areaNumbers(s); if (!a || a.areaSqFt === null || a.areaSqFt === undefined) continue;
+    if (a.areaSqFt > biggest) biggest = a.areaSqFt; n++;
+  }
+  if (!n) return null;
+  return { count: n, bigSqFt: biggest };
+}
+function bigSketch(){ return bigNumbers(shapes); }
 function typesNumbers(list){ // whole-sketch shape mix: how many of each type are in the sketch
   const src = Array.isArray(list) ? list : shapes;
   const out = { total: src.length, rect: 0, circle: 0, line: 0, wall: 0, text: 0 };
@@ -477,6 +552,24 @@ function render(){
   const edge = edgeNumbers(shapes);
   document.getElementById("stEdge").textContent = !edge ? "—"
     : (Math.round(edge.edgeFt * 10) / 10) + " ft edges";
+  const span = spanNumbers(shapes);
+  document.getElementById("stSpan").textContent = !span ? "—"
+    : (Math.round(span.spanFt * 10) / 10) + " ft span";
+  const short = shortNumbers(shapes);
+  document.getElementById("stShort").textContent = !short ? "—"
+    : (Math.round(short.shortFt * 10) / 10) + " ft short side";
+  const diff = diffNumbers(shapes);
+  document.getElementById("stDiff").textContent = !diff ? "—"
+    : (Math.round(diff.diffFt * 10) / 10) + " ft diff";
+  const avg = avgNumbers(shapes);
+  document.getElementById("stAvg").textContent = !avg ? "—"
+    : (Math.round(avg.avgSqFt * 10) / 10) + " sq ft avg";
+  const small = smallNumbers(shapes);
+  document.getElementById("stSmall").textContent = !small ? "—"
+    : (Math.round(small.smallSqFt * 10) / 10) + " sq ft smallest";
+  const big = bigNumbers(shapes);
+  document.getElementById("stBig").textContent = !big ? "—"
+    : (Math.round(big.bigSqFt * 10) / 10) + " sq ft largest";
   const mid = midNumbers(shapes);
   document.getElementById("stMid").textContent = !mid ? "—"
     : (Math.round(mid.xFt * 10) / 10) + " ft, " + (Math.round(mid.yFt * 10) / 10) + " ft";
@@ -1041,7 +1134,7 @@ window.CADSketch = {
   addLine(x1, y1, x2, y2, type){ pushHistory(); const s = { id: uid++, type: type || "line", x1, y1, x2, y2 }; shapes.push(s); render(); return s; },
   addCircle(cx, cy, r){ pushHistory(); const s = { id: uid++, type: "circle", cx, cy, r }; shapes.push(s); render(); return s; },
   addText(x, y, text){ pushHistory(); const s = { id: uid++, type: "text", x, y, text }; shapes.push(s); render(); return s; },
-  dimNumbers, dimLabel, areaNumbers, areaSelected, angleNumbers, angleSelected, totalsNumbers, totalsSketch, boundsNumbers, boundsSketch, midNumbers, midSketch, diagNumbers, diagSketch, ratioNumbers, ratioSketch, perimNumbers, perimSketch, coverNumbers, coverSketch, fillNumbers, fillSketch, gapNumbers, gapSketch, edgeNumbers, edgeSketch, typesNumbers, typesSketch, pxToFt, fmtFt,
+  dimNumbers, dimLabel, areaNumbers, areaSelected, angleNumbers, angleSelected, totalsNumbers, totalsSketch, boundsNumbers, boundsSketch, midNumbers, midSketch, diagNumbers, diagSketch, ratioNumbers, ratioSketch, perimNumbers, perimSketch, coverNumbers, coverSketch, fillNumbers, fillSketch, gapNumbers, gapSketch, edgeNumbers, edgeSketch, spanNumbers, spanSketch, shortNumbers, shortSketch, diffNumbers, diffSketch, avgNumbers, avgSketch, smallNumbers, smallSketch, bigNumbers, bigSketch, typesNumbers, typesSketch, pxToFt, fmtFt,
   saveSketch, loadSketch, duplicateSelected, rotateSelected, nudgeSelected, resizeSelected, snapSelected, centerSelected, resetView, fitView, focusSelected, keepSelectedOnly, bringToFrontSelected, sendToBackSelected, bringForwardSelected, sendBackwardSelected, originSelected, setSizeSelected, flipSelected, flipHSelected, flipVSelected, selectNext, setPositionSelected, setTextSelected,
   measure(a, b){ const ft = pxToFt(Math.hypot(b.x - a.x, b.y - a.y)); lastMeasure = { ft, pts: [a, b] }; render(); return ft; },
   clear(){ shapes = []; selectedId = null; lastMeasure = null; render(); }
