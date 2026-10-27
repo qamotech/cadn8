@@ -1,0 +1,1051 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b0f1a">
+<title>📐 CADN8 — Quick Job-Site CAD</title>
+<style>
+:root{
+  --bg:#0b0f1a; --bg2:#121828; --card:#171f36; --card2:#1e2947;
+  --ink:#f4f7ff; --muted:#a8b3cf; --line:#2a3557;
+  --orange:#ff7a1a; --teal:#2dd4bf; --gold:#fbbf24; --red:#f87171; --green:#4ade80;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;padding-bottom:24px}
+header{position:sticky;top:0;z-index:20;background:linear-gradient(135deg,#121828,#1a1030);border-bottom:2px solid var(--orange);padding:10px 14px;display:flex;align-items:center;gap:10px}
+header .logo{font-size:28px}
+header h1{font-size:19px;margin:0;line-height:1.1}
+header p{margin:2px 0 0;color:var(--muted);font-size:12px}
+main{max-width:860px;margin:0 auto;padding:10px}
+.bar{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:8px;margin:0 0 10px}
+.bar .row{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+button.tool,button.act{border:2px solid var(--line);background:var(--card2);color:var(--ink);border-radius:10px;padding:9px 11px;font-size:14px;font-weight:700;cursor:pointer;min-height:44px;min-width:44px}
+button.tool.on{background:var(--orange);color:#14100a;border-color:var(--orange)}
+button.act:active{transform:scale(.97)}
+button.act.teal{background:var(--teal);color:#0b1512;border-color:var(--teal)}
+button.act.danger{background:transparent;color:var(--red);border-color:var(--red)}
+button:disabled{opacity:.4;cursor:default}
+label.lbl{font-size:12px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+input[type=number],input[type=text]{background:#0d1322;color:var(--ink);border:2px solid var(--line);border-radius:10px;padding:10px;font-size:15px;min-height:44px}
+input[type=number]{width:76px}
+input[type=text]{flex:1;min-width:120px}
+.switch{display:inline-flex;align-items:center;gap:6px;font-size:14px;font-weight:700;background:var(--card2);border:2px solid var(--line);border-radius:10px;padding:8px 10px;min-height:44px;cursor:pointer}
+.switch input{width:20px;height:20px;accent-color:var(--orange)}
+#canvasWrap{background:#0d1322;border:2px solid var(--line);border-radius:14px;overflow:hidden;touch-action:none}
+canvas{display:block;width:100%;height:520px;touch-action:none;cursor:crosshair}
+#status{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+#status .pill{background:var(--card);border:1px solid var(--line);border-radius:999px;padding:7px 12px;font-size:13px;font-weight:700}
+#status .pill b{color:var(--gold)}
+.sketch-row{display:flex;gap:8px;align-items:center;background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin:6px 0}
+.sketch-row .nm{flex:1;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sketch-row button{min-height:40px;padding:6px 10px}
+.small{font-size:13px;color:var(--muted)}
+h3{margin:4px 0 8px;font-size:15px}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">📐</div>
+  <div>
+    <h1>📐 CADN8 <span id="verPill" style="font-size:12px;color:#0b1512;background:var(--gold);border-radius:999px;padding:3px 9px;vertical-align:middle;letter-spacing:.03em">v1.0.31</span></h1>
+    <p>Quick job-site sketches — rooms, decks, mounting walls</p>
+  </div>
+</header>
+<main>
+  <div class="bar" id="toolBar">
+    <div class="row" role="group" aria-label="Tools">
+      <button class="tool on" data-tool="select" title="Select / move">🖱️ Select</button>
+      <button class="tool" data-tool="line" title="Line">📏 Line</button>
+      <button class="tool" data-tool="rect" title="Rectangle">▭ Rect</button>
+      <button class="tool" data-tool="circle" title="Circle">◯ Circle</button>
+      <button class="tool" data-tool="wall" title="Wall (thick line)">🧱 Wall</button>
+      <button class="tool" data-tool="text" title="Text label">🔤 Text</button>
+      <button class="tool" data-tool="measure" title="Measure distance">📐 Measure</button>
+      <button class="tool" data-tool="eraser" title="Tap a shape to delete it">🧽 Eraser</button>
+      <button class="tool" data-tool="pan" title="Pan the canvas">✋ Pan</button>
+    </div>
+  </div>
+
+  <div class="bar">
+    <div class="row">
+      <label class="switch"><input type="checkbox" id="gridOn" checked> Grid</label>
+      <label class="switch"><input type="checkbox" id="snapOn" checked> Snap</label>
+      <span class="lbl">1 square =</span>
+      <input type="number" id="scaleFt" value="1" min="0.1" step="0.1" aria-label="Feet per grid square">
+      <span class="lbl">ft</span>
+      <button class="act" id="btnUndo" title="Undo">↩️ Undo</button>
+      <button class="act" id="btnRedo" title="Redo">↪️ Redo</button>
+      <button class="act danger" id="btnDelete" title="Delete selected">🗑️ Delete</button>
+      <button class="act" id="btnDup" title="Duplicate the selected shape (offset copy)">⧉ Duplicate</button>
+      <button class="act" id="btnRotate" title="Rotate the selected shape 90 degrees around its center">↻ Rotate 90°</button>
+      <button class="act" id="btnGrow" title="Grow the selected shape by one square around its center (+ key)">⤢ Grow</button>
+      <button class="act" id="btnShrink" title="Shrink the selected shape by one square around its center (− key)">⤡ Shrink</button>
+      <button class="act" id="btnSnapSel" title="Snap the selected shape to the nearest grid square (S key)">⊞ Snap</button>
+      <button class="act" id="btnCenterSel" title="Center the selected shape in the current view (C key)">◎ Center</button>
+      <button class="act" id="btnFrontSel" title="Bring the selected shape to the front, on top of overlapping shapes (F key)">⤒ Front</button>
+      <button class="act" id="btnBackSel" title="Send the selected shape to the back, behind overlapping shapes (B key)">⤓ Back</button>
+      <button class="act" id="btnForwardSel" title="Bring the selected shape one layer forward, swapping with the shape just above it (] key)">↑ Forward</button>
+      <button class="act" id="btnBackwardSel" title="Send the selected shape one layer backward, swapping with the shape just below it ([ key)">↓ Backward</button>
+      <button class="act" id="btnOriginSel" title="Move the selected shape so its top-left lands on the origin (0,0) (O key)">⌂ Origin</button>
+      <button class="act" id="btnExactSel" title="Set the selected shape to an exact size in feet (E key)">📐 Exact Size</button>
+      <button class="act" id="btnFlipH" title="Flip the selected shape horizontally, mirrored around its center (H key)">⇋ Flip H</button>
+      <button class="act" id="btnFlipV" title="Flip the selected shape vertically, mirrored around its center (V key)">⇅ Flip V</button>
+      <button class="act" id="btnNextSel" title="Select the next shape in the sketch (Tab key; Shift+Tab for previous)">⏭ Next Shape</button>
+      <button class="act" id="btnPosSel" title="Move the selected shape to an exact position in feet (P key)">📍 Exact Pos</button>
+      <button class="act" id="btnEditTextSel" title="Edit the text of the selected label (T key)">✏️ Edit Label</button>
+      <span class="lbl" title="Nudge the selected shape">Nudge</span>
+      <button class="act" id="btnNudgeL" title="Nudge selected shape left (arrow keys work too; Shift = a full square)">◀</button>
+      <button class="act" id="btnNudgeU" title="Nudge selected shape up (arrow keys work too; Shift = a full square)">▲</button>
+      <button class="act" id="btnNudgeD" title="Nudge selected shape down (arrow keys work too; Shift = a full square)">▼</button>
+      <button class="act" id="btnNudgeR" title="Nudge selected shape right (arrow keys work too; Shift = a full square)">▶</button>
+      <button class="act" id="btnResetView" title="Reset the pan view back to the origin (0 key)">🧭 Reset View</button>
+      <button class="act" id="btnFitView" title="Fit the whole sketch in the view, centered (9 key)">🔍 Fit View</button>
+      <button class="act" id="btnFocusSel" title="Focus the view on the selected shape, centered without moving it (L key)">🎯 Focus</button>
+      <button class="act" id="btnKeepSel" title="Keep only the selected shape, deleting every other shape (K key)">⭐ Keep Only</button>
+      <button class="act" id="btnRoom" title="Insert a 12 by 16 foot room outline">🏠 Room 12×16</button>
+      <button class="act danger" id="btnClear" title="Clear the whole sketch">🧹 Clear</button>
+    </div>
+  </div>
+
+  <div id="canvasWrap"><canvas id="cv"></canvas></div>
+  <div id="status">
+    <span class="pill">Cursor: <b id="stCursor">—</b></span>
+    <span class="pill">Selected: <b id="stSel">none</b></span>
+    <span class="pill">Area: <b id="stArea">—</b></span>
+    <span class="pill">Angle: <b id="stAngle">—</b></span>
+    <span class="pill">Total: <b id="stTotal">—</b></span>
+    <span class="pill">Bounds: <b id="stBounds">—</b></span>
+    <span class="pill">Perim: <b id="stPerim">—</b></span>
+    <span class="pill">Cover: <b id="stCover">—</b></span>
+    <span class="pill">Fill: <b id="stFill">—</b></span>
+    <span class="pill">Gap: <b id="stGap">—</b></span>
+    <span class="pill">Edge: <b id="stEdge">—</b></span>
+    <span class="pill">Mid: <b id="stMid">—</b></span>
+    <span class="pill">Diag: <b id="stDiag">—</b></span>
+    <span class="pill">Ratio: <b id="stRatio">—</b></span>
+    <span class="pill">Types: <b id="stTypes">—</b></span>
+    <span class="pill">Measure: <b id="stMeasure">tap two points</b></span>
+    <span class="pill">Shapes: <b id="stCount">0</b></span>
+  </div>
+
+  <div class="bar" style="margin-top:10px">
+    <h3>💾 Sketches (saved on this device)</h3>
+    <div class="row">
+      <input type="text" id="sketchName" placeholder="Sketch name — e.g. Smith kitchen" aria-label="Sketch name">
+      <button class="act teal" id="btnSave">💾 Save</button>
+    </div>
+    <div id="sketchList"><p class="small" style="margin:8px 0 2px">No saved sketches yet.</p></div>
+  </div>
+
+  <div class="bar">
+    <h3>📤 Export / Import</h3>
+    <div class="row">
+      <button class="act" id="btnPng">🖼️ Export PNG</button>
+      <button class="act" id="btnJson">⬇️ Export JSON</button>
+      <button class="act" id="btnImport">⬆️ Import JSON</button>
+      <input type="file" id="fileImport" accept=".json,application/json" hidden>
+    </div>
+    <p class="small" style="margin:8px 0 0">Tip: dimensions under each shape come from the scale above. Change “1 square = ft” and every label updates. Tap a shape with Select to move or delete it. Nudge a selected shape with the ◀▲▼▶ buttons or arrow keys (Shift + arrow = a full square). Grow or shrink it with ⤢/⤡ or the +/− keys — it resizes around its center. Tap ⊞ Snap (or press S) to pull a selected shape back onto the nearest grid square. Tap ◎ Center (or press C) to center a selected shape in the current view. Use ⤒ Front / ⤓ Back (or F / B) to layer a selected shape on top of or behind overlapping shapes. Tap ⌂ Origin (or press O) to move a selected shape so its top-left lands on the origin (0,0). Tap 📐 Exact Size (or press E) to type an exact size in feet for a selected shape — width × height for a rect, diameter for a circle, length for a line or wall — resized around its center. Tap ⇋ Flip H / ⇅ Flip V (or press H / V) to mirror a selected line or wall around its center — handy for flipping a slope or run direction; rects and circles are symmetric, so a flip leaves them unchanged. Tap 📍 Exact Pos (or press P) to move a selected shape to an exact position in feet — its top-left X and Y from the origin. Select a text label and tap ✏️ Edit Label (or press T) to rename it in place without deleting and retyping it. Use ↑ Forward / ↓ Backward (or ] / [) to move a selected shape just one layer — swapping with the shape right above or below it — instead of jumping all the way to the front or back. After panning around with ✋ Pan, tap 🧭 Reset View (or press 0) to jump the view straight back to the origin. Tap 🔍 Fit View (or press 9) to center the whole sketch in the view at once — handy after drawing or loading shapes that landed off-screen. Tap 🎯 Focus (or press L) to center the view on just the selected shape without moving it — handy for jumping straight to one shape in a big sketch. Tap ⭐ Keep Only (or press K) to keep just the selected shape and delete every other shape — handy for isolating one part of a sketch; Undo brings the rest back. The Area readout in the status bar shows the selected shape's area and perimeter in real feet — a rect gives its floor area and wall run, a circle its area and circumference, and a line or wall just its length — handy for quick material estimates. The Angle readout next to it shows how steep a selected line or wall runs, from 0° (level) to 90° (straight up) — handy for checking a ramp, pitch, or brace angle at a glance. The Total readout adds up the whole sketch — combined floor area of every rect and circle plus the combined length of every line and wall — handy for a quick whole-job material estimate without adding shapes up one by one. The Bounds readout next to it shows the whole sketch's overall footprint — its combined width × height in feet from the leftmost to the rightmost and topmost to bottommost edge — handy for checking whether a layout fits a room, sheet, or trailer at a glance. The Types readout next to it breaks the sketch down by shape — how many rects, circles, lines, walls, and labels it holds — handy for a quick count before ordering materials or checking nothing was missed. The Mid readout next to it shows the center point of the whole sketch in feet — the middle of its overall footprint — handy for finding the middle of a layout for a centered fixture, mount, or light. The Diag readout next to it shows the corner-to-corner diagonal of the whole sketch's footprint in feet — handy for checking a layout is square (equal diagonals) or whether it fits corner-to-corner in a trailer, sheet, or room. The Ratio readout next to it shows the aspect ratio of the whole sketch's footprint — its width divided by its height, like 1.33 : 1 for a 16 × 12 ft room — handy for scaling a layout up or down, matching it to a sheet or screen, or checking a photo or print will fit without stretching. The Perim readout next to it shows the distance around the whole sketch's footprint in feet — twice its width plus twice its height — handy for estimating trim, edging, fencing, or tape needed to go around a layout. The Cover readout next to it shows the footprint area of the whole sketch in square feet — its overall width times its overall height — handy for estimating flooring, sheet goods, paint coverage, or drop cloths needed to cover a layout's full footprint. The Fill readout next to it shows what share of that footprint the shapes themselves actually cover, as a percent — a single room filling its outline reads 100%, while gaps and open space inside the outline pull it down — handy for spotting wasted space in a layout or estimating how much of a sheet, floor, or lot is really in use. The Gap readout next to it shows that same open space as an absolute number — the footprint area minus the area the shapes themselves cover, in square feet — handy for estimating leftover sheet goods, offcuts, or how much open floor a layout leaves in real numbers instead of just a percent. The Edge readout next to it shows the total edge length of every shape in the sketch added together — each rect's perimeter, each circle's circumference, and each line or wall's length, in feet — handy for estimating trim, edging, tape, or cut length across a whole layout, not just around its outside footprint.</p>
+  </div>
+</main>
+
+<script>
+"use strict";
+/* ================= State ================= */
+const APP_NAME = "CADN8";
+const APP_VERSION = "1.0.31";          // bump patch each upgrade-loop cycle
+const GRID = 40;                       // px per grid square
+let shapes = [];                       // drawing objects, world px coords
+let selectedId = null;
+let tool = "select";
+let scaleFt = 1;                       // feet per grid square
+let gridOn = true, snapOn = true;
+let view = { ox: 0, oy: 0 };           // pan offset (screen px)
+let undoStack = [], redoStack = [];
+let draft = null;                      // shape being drawn
+let drag = null;                       // {mode:'move'|'pan'|'draw', ...}
+let measurePts = [];
+let lastMeasure = null;                // {ft:number}
+let uid = 1;
+
+const cv = document.getElementById("cv");
+const ctx = cv.getContext("2d");
+const LS_SKETCHES = "cadsketch_sketches_v1";
+const LS_CURRENT  = "cadsketch_current_v1";
+
+/* ================= Units ================= */
+const pxToFt = px => px / GRID * scaleFt;
+const ftToPx = ft => ft / scaleFt * GRID;
+function fmtFt(ft){
+  let totalIn = Math.round(Math.abs(ft) * 12);
+  const f = Math.floor(totalIn / 12), i = totalIn % 12;
+  return (ft < 0 ? "-" : "") + f + "′" + i + "″";
+}
+function segLen(s){ return Math.hypot(s.x2 - s.x1, s.y2 - s.y1); }
+function dimNumbers(s){ // numeric real-world dims, used by labels + API tests
+  if (!s) return null;
+  if (s.type === "line" || s.type === "wall") return { lengthFt: pxToFt(segLen(s)) };
+  if (s.type === "rect") return { wFt: pxToFt(Math.abs(s.w)), hFt: pxToFt(Math.abs(s.h)) };
+  if (s.type === "circle") return { dFt: pxToFt(2 * s.r), rFt: pxToFt(s.r) };
+  return null;
+}
+function areaNumbers(s){ // real-world area + perimeter, used by the status readout + API tests
+  if (!s) return null;
+  if (s.type === "rect"){
+    const wFt = pxToFt(Math.abs(s.w)), hFt = pxToFt(Math.abs(s.h));
+    return { areaSqFt: wFt * hFt, perimFt: 2 * (wFt + hFt) };
+  }
+  if (s.type === "circle"){
+    const rFt = pxToFt(s.r);
+    return { areaSqFt: Math.PI * rFt * rFt, perimFt: 2 * Math.PI * rFt };
+  }
+  if (s.type === "line" || s.type === "wall") return { areaSqFt: null, perimFt: pxToFt(segLen(s)) };
+  return null;
+}
+function areaSelected(){
+  const s = shapes.find(x => x.id === selectedId); if (!s) return null;
+  const a = areaNumbers(s); if (!a) return null;
+  return { type: s.type, areaSqFt: a.areaSqFt, perimFt: a.perimFt };
+}
+function angleNumbers(s){ // inclination of a line/wall from level, 0 (flat) to 90 (vertical) degrees
+  if (!s || (s.type !== "line" && s.type !== "wall")) return null;
+  const dx = Math.abs(s.x2 - s.x1), dy = Math.abs(s.y2 - s.y1);
+  if (!dx && !dy) return { angleDeg: 0 };
+  return { angleDeg: Math.atan2(dy, dx) * 180 / Math.PI };
+}
+function angleSelected(){
+  const s = shapes.find(x => x.id === selectedId); if (!s) return null;
+  const a = angleNumbers(s); if (!a) return null;
+  return { type: s.type, angleDeg: a.angleDeg };
+}
+function totalsNumbers(list){ // whole-sketch totals: combined floor area (rect+circle) + combined line/wall length
+  const src = Array.isArray(list) ? list : shapes;
+  let areaSqFt = 0, lengthFt = 0;
+  for (const s of src){
+    const a = areaNumbers(s); if (!a) continue;
+    if (a.areaSqFt !== null && a.areaSqFt !== undefined) areaSqFt += a.areaSqFt;
+    else if ((s.type === "line" || s.type === "wall") && a.perimFt) lengthFt += a.perimFt;
+  }
+  return { count: src.length, areaSqFt, lengthFt };
+}
+function totalsSketch(){ return totalsNumbers(shapes); }
+function boundsNumbers(list){ // whole-sketch envelope: combined bounds size + top-left, in feet
+  const src = Array.isArray(list) ? list : shapes;
+  if (!src.length) return null;
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  for (const s of src){
+    const b = bounds(s);
+    minX = Math.min(minX, b.x); minY = Math.min(minY, b.y);
+    maxX = Math.max(maxX, b.x + b.w); maxY = Math.max(maxY, b.y + b.h);
+  }
+  return { count: src.length, xFt: pxToFt(minX), yFt: pxToFt(minY), wFt: pxToFt(maxX - minX), hFt: pxToFt(maxY - minY) };
+}
+function boundsSketch(){ return boundsNumbers(shapes); }
+function midNumbers(list){ // whole-sketch center point: middle of the combined bounds envelope, in feet
+  const b = boundsNumbers(list); if (!b) return null;
+  return { count: b.count, xFt: b.xFt + b.wFt / 2, yFt: b.yFt + b.hFt / 2 };
+}
+function midSketch(){ return midNumbers(shapes); }
+function diagNumbers(list){ // whole-sketch diagonal: corner-to-corner distance of the combined bounds envelope, in feet
+  const b = boundsNumbers(list); if (!b) return null;
+  return { count: b.count, diagFt: Math.hypot(b.wFt, b.hFt) };
+}
+function diagSketch(){ return diagNumbers(shapes); }
+function ratioNumbers(list){ // whole-sketch aspect ratio: width / height of the combined bounds envelope
+  const b = boundsNumbers(list); if (!b || !b.hFt) return null;
+  return { count: b.count, ratio: b.wFt / b.hFt };
+}
+function ratioSketch(){ return ratioNumbers(shapes); }
+function perimNumbers(list){ // whole-sketch perimeter: distance around the combined bounds envelope, in feet
+  const b = boundsNumbers(list); if (!b) return null;
+  return { count: b.count, perimFt: 2 * (b.wFt + b.hFt) };
+}
+function perimSketch(){ return perimNumbers(shapes); }
+function coverNumbers(list){ // whole-sketch footprint area: area of the combined bounds envelope, in sq ft
+  const b = boundsNumbers(list); if (!b) return null;
+  return { count: b.count, coverSqFt: b.wFt * b.hFt };
+}
+function coverSketch(){ return coverNumbers(shapes); }
+function fillNumbers(list){ // whole-sketch fill: share of the footprint envelope actually covered by shapes, as a percent
+  const b = boundsNumbers(list); if (!b) return null;
+  const cover = b.wFt * b.hFt; if (!cover) return null;
+  const t = totalsNumbers(list);
+  return { count: b.count, fillPct: t.areaSqFt / cover * 100 };
+}
+function fillSketch(){ return fillNumbers(shapes); }
+function gapNumbers(list){ // whole-sketch gap: open area inside the footprint envelope not covered by shapes, in sq ft
+  const b = boundsNumbers(list); if (!b) return null;
+  const cover = b.wFt * b.hFt; if (!cover) return null;
+  const t = totalsNumbers(list);
+  return { count: b.count, gapSqFt: cover - t.areaSqFt };
+}
+function gapSketch(){ return gapNumbers(shapes); }
+function edgeNumbers(list){ // whole-sketch edge: total edge length of every shape added together, in ft — each rect's perimeter, each circle's circumference, each line/wall's length
+  const src = Array.isArray(list) ? list : shapes;
+  if (!src.length) return null;
+  let edgeFt = 0;
+  for (const s of src){
+    const a = areaNumbers(s); if (!a || a.perimFt === null || a.perimFt === undefined) continue;
+    edgeFt += a.perimFt;
+  }
+  return { count: src.length, edgeFt };
+}
+function edgeSketch(){ return edgeNumbers(shapes); }
+function typesNumbers(list){ // whole-sketch shape mix: how many of each type are in the sketch
+  const src = Array.isArray(list) ? list : shapes;
+  const out = { total: src.length, rect: 0, circle: 0, line: 0, wall: 0, text: 0 };
+  for (const s of src){ if (Object.prototype.hasOwnProperty.call(out, s.type)) out[s.type]++; }
+  return out;
+}
+function typesSketch(){ return typesNumbers(shapes); }
+function typesLabel(t){
+  if (!t || !t.total) return "—";
+  const part = (n, one, many) => n ? n + " " + (n === 1 ? one : many) : null;
+  return [
+    part(t.rect, "rect", "rects"),
+    part(t.circle, "circle", "circles"),
+    part(t.line, "line", "lines"),
+    part(t.wall, "wall", "walls"),
+    part(t.text, "label", "labels")
+  ].filter(Boolean).join(" · ") || "—";
+}
+function dimLabel(s){
+  const d = dimNumbers(s); if (!d) return "";
+  if (d.lengthFt !== undefined) return fmtFt(d.lengthFt);
+  if (d.wFt !== undefined) return fmtFt(d.wFt) + " × " + fmtFt(d.hFt);
+  if (d.dFt !== undefined) return "⌀ " + fmtFt(d.dFt);
+  return "";
+}
+
+/* ================= History ================= */
+function snapshot(){ return JSON.stringify({ shapes, scaleFt }); }
+function pushHistory(){ undoStack.push(snapshot()); if (undoStack.length > 80) undoStack.shift(); redoStack = []; syncUndoBtns(); }
+function restore(snap){
+  const d = JSON.parse(snap);
+  shapes = d.shapes || []; scaleFt = d.scaleFt || 1;
+  document.getElementById("scaleFt").value = scaleFt;
+  selectedId = null; render();
+}
+function undo(){ if (!undoStack.length) return; redoStack.push(snapshot()); restore(undoStack.pop()); syncUndoBtns(); }
+function redo(){ if (!redoStack.length) return; undoStack.push(snapshot()); restore(redoStack.pop()); syncUndoBtns(); }
+function syncUndoBtns(){
+  document.getElementById("btnUndo").disabled = !undoStack.length;
+  document.getElementById("btnRedo").disabled = !redoStack.length;
+}
+
+/* ================= Geometry helpers ================= */
+function distToSeg(px, py, x1, y1, x2, y2){
+  const dx = x2 - x1, dy = y2 - y1, L2 = dx*dx + dy*dy;
+  let t = L2 ? ((px - x1)*dx + (py - y1)*dy) / L2 : 0;
+  t = Math.max(0, Math.min(1, t));
+  return Math.hypot(px - (x1 + t*dx), py - (y1 + t*dy));
+}
+function hitTest(wx, wy){
+  for (let i = shapes.length - 1; i >= 0; i--){
+    const s = shapes[i], T = 10;
+    if (s.type === "line" || s.type === "wall"){
+      if (distToSeg(wx, wy, s.x1, s.y1, s.x2, s.y2) <= Math.max(T, s.type === "wall" ? 9 : 5)) return s;
+    } else if (s.type === "rect"){
+      const x = Math.min(s.x, s.x + s.w), y = Math.min(s.y, s.y + s.h);
+      const w = Math.abs(s.w), h = Math.abs(s.h);
+      if (wx >= x - T && wx <= x + w + T && wy >= y - T && wy <= y + h + T) return s;
+    } else if (s.type === "circle"){
+      if (Math.abs(Math.hypot(wx - s.cx, wy - s.cy) - s.r) <= T + 4 ||
+          Math.hypot(wx - s.cx, wy - s.cy) <= s.r) return s;
+    } else if (s.type === "text"){
+      const w = ctx.measureText(s.text).width + 16;
+      if (wx >= s.x - 4 && wx <= s.x + w && wy >= s.y - 22 && wy <= s.y + 8) return s;
+    }
+  }
+  return null;
+}
+function moveShape(s, dx, dy){
+  if (s.type === "line" || s.type === "wall"){ s.x1 += dx; s.y1 += dy; s.x2 += dx; s.y2 += dy; }
+  else if (s.type === "rect" || s.type === "text"){ s.x += dx; s.y += dy; }
+  else if (s.type === "circle"){ s.cx += dx; s.cy += dy; }
+}
+function labelPos(s){
+  if (s.type === "line" || s.type === "wall") return { x: (s.x1 + s.x2)/2, y: (s.y1 + s.y2)/2 - 10 };
+  if (s.type === "rect") return { x: s.x + s.w/2, y: s.y + s.h + 18 };
+  if (s.type === "circle") return { x: s.cx, y: s.cy + s.r + 18 };
+  return { x: s.x, y: s.y };
+}
+
+/* ================= Rendering ================= */
+function drawShape(c, s, selected){
+  c.save();
+  c.strokeStyle = selected ? "#fbbf24" : "#f4f7ff";
+  c.fillStyle = "#f4f7ff";
+  c.lineWidth = 2;
+  if (s.type === "line"){ c.beginPath(); c.moveTo(s.x1, s.y1); c.lineTo(s.x2, s.y2); c.stroke(); }
+  else if (s.type === "wall"){
+    c.strokeStyle = selected ? "#fbbf24" : "#ffa04d"; c.lineWidth = 10; c.lineCap = "round";
+    c.beginPath(); c.moveTo(s.x1, s.y1); c.lineTo(s.x2, s.y2); c.stroke();
+  }
+  else if (s.type === "rect"){ c.strokeRect(s.x, s.y, s.w, s.h); }
+  else if (s.type === "circle"){ c.beginPath(); c.arc(s.cx, s.cy, s.r, 0, Math.PI * 2); c.stroke(); }
+  else if (s.type === "text"){
+    c.font = "700 17px system-ui, sans-serif"; c.fillStyle = selected ? "#fbbf24" : "#2dd4bf";
+    c.fillText(s.text, s.x, s.y);
+  }
+  c.restore();
+  // dimension label
+  const lbl = dimLabel(s);
+  if (lbl){
+    const p = labelPos(s);
+    c.save();
+    c.font = "700 13px system-ui, sans-serif";
+    const w = c.measureText(lbl).width + 12;
+    c.fillStyle = "rgba(11,15,26,.88)";
+    c.fillRect(p.x - w/2, p.y - 11, w, 20);
+    c.strokeStyle = "#2a3557"; c.lineWidth = 1; c.strokeRect(p.x - w/2, p.y - 11, w, 20);
+    c.fillStyle = "#fbbf24"; c.textAlign = "center"; c.textBaseline = "middle";
+    c.fillText(lbl, p.x, p.y);
+    c.restore();
+  }
+  if (selected && s.type !== "text"){
+    c.save(); c.strokeStyle = "#fbbf24"; c.setLineDash([5,5]); c.lineWidth = 1.5;
+    const b = bounds(s); c.strokeRect(b.x - 6, b.y - 6, b.w + 12, b.h + 12); c.restore();
+  }
+}
+function bounds(s){
+  if (s.type === "line" || s.type === "wall")
+    return { x: Math.min(s.x1, s.x2), y: Math.min(s.y1, s.y2), w: Math.abs(s.x2 - s.x1), h: Math.abs(s.y2 - s.y1) };
+  if (s.type === "rect") return { x: Math.min(s.x, s.x + s.w), y: Math.min(s.y, s.y + s.h), w: Math.abs(s.w), h: Math.abs(s.h) };
+  if (s.type === "circle") return { x: s.cx - s.r, y: s.cy - s.r, w: 2*s.r, h: 2*s.r };
+  return { x: s.x, y: s.y - 20, w: 80, h: 26 };
+}
+function render(){
+  const W = cv.width, H = cv.height;
+  ctx.fillStyle = "#0d1322"; ctx.fillRect(0, 0, W, H);
+  if (gridOn){
+    ctx.save(); ctx.strokeStyle = "#22304f"; ctx.lineWidth = 1; ctx.beginPath();
+    for (let x = view.ox % GRID; x <= W; x += GRID){ ctx.moveTo(x, 0); ctx.lineTo(x, H); }
+    for (let y = view.oy % GRID; y <= H; y += GRID){ ctx.moveTo(0, y); ctx.lineTo(W, y); }
+    ctx.stroke(); ctx.restore();
+  }
+  ctx.save(); ctx.translate(view.ox, view.oy);
+  for (const s of shapes) drawShape(ctx, s, s.id === selectedId);
+  if (draft) drawShape(ctx, draft, false);
+  // measure overlay
+  if (measurePts.length || lastMeasure){
+    ctx.save();
+    const pts = lastMeasure ? lastMeasure.pts : measurePts;
+    ctx.fillStyle = "#2dd4bf";
+    for (const p of pts){ ctx.beginPath(); ctx.arc(p.x, p.y, 5, 0, Math.PI*2); ctx.fill(); }
+    if (pts.length === 2){
+      ctx.strokeStyle = "#2dd4bf"; ctx.setLineDash([7,5]); ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(pts[0].x, pts[0].y); ctx.lineTo(pts[1].x, pts[1].y); ctx.stroke();
+    }
+    ctx.restore();
+  }
+  ctx.restore();
+  // status
+  document.getElementById("stCount").textContent = shapes.length;
+  const sel = shapes.find(s => s.id === selectedId);
+  document.getElementById("stSel").textContent = sel ? (sel.type + (dimLabel(sel) ? " · " + dimLabel(sel) : "")) : "none";
+  const selArea = sel ? areaNumbers(sel) : null;
+  document.getElementById("stArea").textContent = !selArea ? "—"
+    : selArea.areaSqFt === null ? fmtFt(selArea.perimFt) + " long"
+    : (Math.round(selArea.areaSqFt * 10) / 10) + " sq ft · " + (Math.round(selArea.perimFt * 10) / 10) + " ft around";
+  const selAngle = sel ? angleNumbers(sel) : null;
+  document.getElementById("stAngle").textContent = !selAngle ? "—"
+    : (Math.round(selAngle.angleDeg * 10) / 10) + "° from level";
+  const tot = totalsNumbers(shapes);
+  document.getElementById("stTotal").textContent = !tot.count ? "—"
+    : [
+        tot.areaSqFt ? (Math.round(tot.areaSqFt * 10) / 10) + " sq ft total" : null,
+        tot.lengthFt ? (Math.round(tot.lengthFt * 10) / 10) + " ft lines" : null
+      ].filter(Boolean).join(" · ") || "—";
+  const bnd = boundsNumbers(shapes);
+  document.getElementById("stBounds").textContent = !bnd ? "—"
+    : (Math.round(bnd.wFt * 10) / 10) + " × " + (Math.round(bnd.hFt * 10) / 10) + " ft";
+  const perim = perimNumbers(shapes);
+  document.getElementById("stPerim").textContent = !perim ? "—"
+    : (Math.round(perim.perimFt * 10) / 10) + " ft around";
+  const cover = coverNumbers(shapes);
+  document.getElementById("stCover").textContent = !cover ? "—"
+    : (Math.round(cover.coverSqFt * 10) / 10) + " sq ft footprint";
+  const fill = fillNumbers(shapes);
+  document.getElementById("stFill").textContent = !fill ? "—"
+    : (Math.round(fill.fillPct * 10) / 10) + "% filled";
+  const gap = gapNumbers(shapes);
+  document.getElementById("stGap").textContent = !gap ? "—"
+    : (Math.round(gap.gapSqFt * 10) / 10) + " sq ft open";
+  const edge = edgeNumbers(shapes);
+  document.getElementById("stEdge").textContent = !edge ? "—"
+    : (Math.round(edge.edgeFt * 10) / 10) + " ft edges";
+  const mid = midNumbers(shapes);
+  document.getElementById("stMid").textContent = !mid ? "—"
+    : (Math.round(mid.xFt * 10) / 10) + " ft, " + (Math.round(mid.yFt * 10) / 10) + " ft";
+  const diag = diagNumbers(shapes);
+  document.getElementById("stDiag").textContent = !diag ? "—"
+    : (Math.round(diag.diagFt * 10) / 10) + " ft diagonal";
+  const ratio = ratioNumbers(shapes);
+  document.getElementById("stRatio").textContent = !ratio ? "—"
+    : ratio.ratio.toFixed(2) + " : 1";
+  document.getElementById("stTypes").textContent = typesLabel(typesNumbers(shapes));
+  document.getElementById("stMeasure").textContent = lastMeasure ? fmtFt(lastMeasure.ft) + " (" + lastMeasure.ft.toFixed(2) + " ft)" : (measurePts.length ? "tap the second point" : "tap two points");
+  persistCurrent();
+}
+function persistCurrent(){
+  try { localStorage.setItem(LS_CURRENT, JSON.stringify({ shapes, scaleFt })); } catch(e){}
+}
+
+/* ================= Pointer handling ================= */
+function toWorld(e){
+  const r = cv.getBoundingClientRect();
+  return { x: (e.clientX - r.left) * (cv.width / r.width) - view.ox,
+           y: (e.clientY - r.top) * (cv.height / r.height) - view.oy };
+}
+function snapPt(p){
+  if (!snapOn) return p;
+  return { x: Math.round(p.x / GRID) * GRID, y: Math.round(p.y / GRID) * GRID };
+}
+cv.addEventListener("pointerdown", e => {
+  cv.setPointerCapture(e.pointerId);
+  const raw = toWorld(e);
+  const p = snapPt(raw);
+  if (tool === "pan"){ drag = { mode: "pan", sx: e.clientX, sy: e.clientY, ox: view.ox, oy: view.oy }; return; }
+  if (tool === "measure"){
+    measurePts.push({ x: raw.x, y: raw.y });
+    if (measurePts.length === 2){
+      const ft = pxToFt(Math.hypot(measurePts[1].x - measurePts[0].x, measurePts[1].y - measurePts[0].y));
+      lastMeasure = { ft, pts: measurePts.slice() };
+      measurePts = [];
+    } else lastMeasure = null;
+    render(); return;
+  }
+  if (tool === "eraser"){
+    const hit = hitTest(raw.x, raw.y);
+    if (hit){ pushHistory(); shapes = shapes.filter(s => s.id !== hit.id); selectedId = null; render(); }
+    return;
+  }
+  if (tool === "text"){
+    const t = prompt("Label text:");
+    if (t && t.trim()){ pushHistory(); shapes.push({ id: uid++, type: "text", x: p.x, y: p.y, text: t.trim() }); render(); }
+    return;
+  }
+  if (tool === "select"){
+    const hit = hitTest(raw.x, raw.y);
+    selectedId = hit ? hit.id : null;
+    if (hit) drag = { mode: "move", id: hit.id, lx: raw.x, ly: raw.y, moved: false, before: snapshot() };
+    render(); return;
+  }
+  // drawing tools
+  pushHistory();
+  if (tool === "line" || tool === "wall") draft = { id: uid++, type: tool, x1: p.x, y1: p.y, x2: p.x, y2: p.y };
+  else if (tool === "rect") draft = { id: uid++, type: "rect", x: p.x, y: p.y, w: 0, h: 0, ax: p.x, ay: p.y };
+  else if (tool === "circle") draft = { id: uid++, type: "circle", cx: p.x, cy: p.y, r: 0 };
+  drag = { mode: "draw" };
+  render();
+});
+cv.addEventListener("pointermove", e => {
+  const raw = toWorld(e);
+  document.getElementById("stCursor").textContent = fmtFt(pxToFt(raw.x)) + " , " + fmtFt(pxToFt(raw.y));
+  if (!drag) return;
+  const p = snapPt(raw);
+  if (drag.mode === "pan"){
+    const r = cv.getBoundingClientRect();
+    view.ox = drag.ox + (e.clientX - drag.sx) * (cv.width / r.width);
+    view.oy = drag.oy + (e.clientY - drag.sy) * (cv.height / r.height);
+    render(); return;
+  }
+  if (drag.mode === "move"){
+    const s = shapes.find(x => x.id === drag.id); if (!s) return;
+    const dx = raw.x - drag.lx, dy = raw.y - drag.ly;
+    if (dx || dy){ moveShape(s, dx, dy); drag.lx = raw.x; drag.ly = raw.y; drag.moved = true; render(); }
+    return;
+  }
+  if (drag.mode === "draw" && draft){
+    if (draft.type === "line" || draft.type === "wall"){ draft.x2 = p.x; draft.y2 = p.y; }
+    else if (draft.type === "rect"){ draft.w = p.x - draft.ax; draft.h = p.y - draft.ay; draft.x = draft.ax; draft.y = draft.ay; }
+    else if (draft.type === "circle"){ draft.r = Math.hypot(p.x - draft.cx, p.y - draft.cy); }
+    render();
+  }
+});
+cv.addEventListener("pointerup", () => {
+  if (drag && drag.mode === "draw" && draft){
+    const d = draft; draft = null;
+    const tiny = (d.type === "rect" && Math.abs(d.w) < 4 && Math.abs(d.h) < 4) ||
+                 ((d.type === "line" || d.type === "wall") && segLen(d) < 4) ||
+                 (d.type === "circle" && d.r < 4);
+    if (tiny){ undoStack.pop(); syncUndoBtns(); }
+    else { delete d.ax; delete d.ay; shapes.push(d); selectedId = d.id; }
+  }
+  if (drag && drag.mode === "move" && !drag.moved){ undoStack = undoStack; }
+  if (drag && drag.mode === "move" && drag.moved){ undoStack.push(drag.before); redoStack = []; syncUndoBtns(); }
+  drag = null; render();
+});
+cv.addEventListener("pointercancel", () => { drag = null; draft = null; render(); });
+
+/* ================= Toolbar / controls ================= */
+document.querySelectorAll("#toolBar .tool").forEach(b => b.addEventListener("click", () => {
+  tool = b.dataset.tool;
+  document.querySelectorAll("#toolBar .tool").forEach(x => x.classList.toggle("on", x === b));
+  measurePts = []; render();
+}));
+document.getElementById("gridOn").addEventListener("change", e => { gridOn = e.target.checked; render(); });
+document.getElementById("snapOn").addEventListener("change", e => { snapOn = e.target.checked; });
+document.getElementById("scaleFt").addEventListener("change", e => {
+  const v = parseFloat(e.target.value);
+  if (v > 0){ pushHistory(); scaleFt = v; render(); }
+});
+document.getElementById("btnUndo").addEventListener("click", undo);
+document.getElementById("btnRedo").addEventListener("click", redo);
+document.getElementById("btnDelete").addEventListener("click", () => {
+  if (selectedId == null) return;
+  pushHistory(); shapes = shapes.filter(s => s.id !== selectedId); selectedId = null; render();
+});
+function duplicateSelected(){
+  const s = shapes.find(x => x.id === selectedId); if (!s) return null;
+  pushHistory();
+  const c = JSON.parse(JSON.stringify(s)); c.id = uid++;
+  moveShape(c, GRID / 2, GRID / 2);
+  shapes.push(c); selectedId = c.id; render(); return c;
+}
+document.getElementById("btnDup").addEventListener("click", duplicateSelected);
+function rotateSelected(){
+  const s = shapes.find(x => x.id === selectedId); if (!s) return null;
+  if (s.type === "text") return null; // text labels stay readable, not rotated
+  pushHistory();
+  const b = bounds(s), cx = b.x + b.w / 2, cy = b.y + b.h / 2;
+  const rot = (x, y) => ({ x: cx - (y - cy), y: cy + (x - cx) }); // 90° clockwise around center
+  if (s.type === "line" || s.type === "wall"){
+    const a = rot(s.x1, s.y1), c = rot(s.x2, s.y2);
+    s.x1 = a.x; s.y1 = a.y; s.x2 = c.x; s.y2 = c.y;
+  } else if (s.type === "rect"){
+    const nw = b.h, nh = b.w;
+    s.x = cx - nw / 2; s.y = cy - nh / 2; s.w = nw; s.h = nh;
+  }
+  // circle: rotating around its own center changes nothing visually
+  render(); return s;
+}
+document.getElementById("btnRotate").addEventListener("click", rotateSelected);
+function resizeSelected(delta){
+  const s = shapes.find(x => x.id === selectedId); if (!s) return null;
+  if (s.type === "text" || !delta) return null; // text labels keep their readable size
+  const b = bounds(s), cx = b.x + b.w / 2, cy = b.y + b.h / 2;
+  if (s.type === "rect"){
+    const nw = Math.max(GRID, Math.abs(s.w) + delta), nh = Math.max(GRID, Math.abs(s.h) + delta);
+    if (nw === Math.abs(s.w) && nh === Math.abs(s.h)) return s;
+    pushHistory();
+    s.x = cx - nw / 2; s.y = cy - nh / 2; s.w = nw; s.h = nh;
+  } else if (s.type === "circle"){
+    const nr = Math.max(GRID / 2, s.r + delta / 2);
+    if (nr === s.r) return s;
+    pushHistory(); s.r = nr;
+  } else if (s.type === "line" || s.type === "wall"){
+    const len = segLen(s); if (!len) return null;
+    const nl = Math.max(GRID, len + delta); if (nl === len) return s;
+    pushHistory();
+    const ux = (s.x2 - s.x1) / len, uy = (s.y2 - s.y1) / len, ex = ux * (nl - len) / 2, ey = uy * (nl - len) / 2;
+    s.x1 -= ex; s.y1 -= ey; s.x2 += ex; s.y2 += ey;
+  } else return null;
+  render(); return s;
+}
+document.getElementById("btnGrow").addEventListener("click", () => resizeSelected(GRID));
+document.getElementById("btnShrink").addEventListener("click", () => resizeSelected(-GRID));
+function snapSelected(){
+  const s = shapes.find(x => x.id === selectedId); if (!s) return null;
+  const b = bounds(s);
+  const dx = Math.round(b.x / GRID) * GRID - b.x, dy = Math.round(b.y / GRID) * GRID - b.y;
+  if (!dx && !dy) return s; // already on the grid — no history entry needed
+  pushHistory();
+  moveShape(s, dx, dy);
+  render(); return s;
+}
+document.getElementById("btnSnapSel").addEventListener("click", snapSelected);
+function centerSelected(){
+  const s = shapes.find(x => x.id === selectedId); if (!s) return null;
+  const b = bounds(s);
+  const cx = cv.width / 2 - view.ox, cy = cv.height / 2 - view.oy; // center of the current view, in world px
+  const dx = cx - (b.x + b.w / 2), dy = cy - (b.y + b.h / 2);
+  if (!dx && !dy) return s; // already centered — no history entry needed
+  pushHistory();
+  moveShape(s, dx, dy);
+  render(); return s;
+}
+document.getElementById("btnCenterSel").addEventListener("click", centerSelected);
+function resetView(){
+  if (!view.ox && !view.oy) return { ox: 0, oy: 0 }; // already at the origin view — nothing to do
+  view.ox = 0; view.oy = 0;
+  render(); return { ox: view.ox, oy: view.oy };
+}
+document.getElementById("btnResetView").addEventListener("click", resetView);
+function fitView(){
+  if (!shapes.length){
+    if (!view.ox && !view.oy) return { ox: 0, oy: 0 }; // empty sketch, already at the origin view
+    view.ox = 0; view.oy = 0; render(); return { ox: view.ox, oy: view.oy };
+  }
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  for (const s of shapes){
+    const b = bounds(s);
+    minX = Math.min(minX, b.x); minY = Math.min(minY, b.y);
+    maxX = Math.max(maxX, b.x + b.w); maxY = Math.max(maxY, b.y + b.h);
+  }
+  const cx = (minX + maxX) / 2, cy = (minY + maxY) / 2; // center of the whole sketch, in world px
+  const ox = cv.width / 2 - cx, oy = cv.height / 2 - cy;
+  if (ox === view.ox && oy === view.oy) return { ox: view.ox, oy: view.oy }; // already fitted — nothing to do
+  view.ox = ox; view.oy = oy;
+  render(); return { ox: view.ox, oy: view.oy };
+}
+document.getElementById("btnFitView").addEventListener("click", fitView);
+function focusSelected(){
+  const s = shapes.find(x => x.id === selectedId); if (!s) return null;
+  const b = bounds(s);
+  const cx = b.x + b.w / 2, cy = b.y + b.h / 2; // center of the selected shape, in world px
+  const ox = cv.width / 2 - cx, oy = cv.height / 2 - cy;
+  if (ox === view.ox && oy === view.oy) return { ox: view.ox, oy: view.oy }; // already focused — nothing to do
+  view.ox = ox; view.oy = oy;
+  render(); return { ox: view.ox, oy: view.oy };
+}
+document.getElementById("btnFocusSel").addEventListener("click", focusSelected);
+function keepSelectedOnly(){
+  const s = shapes.find(x => x.id === selectedId); if (!s) return null;
+  if (shapes.length <= 1) return s; // nothing else to remove — no history entry needed
+  pushHistory();
+  shapes = [s];
+  render(); return s;
+}
+document.getElementById("btnKeepSel").addEventListener("click", keepSelectedOnly);
+function bringToFrontSelected(){
+  const i = shapes.findIndex(x => x.id === selectedId); if (i < 0) return null;
+  const s = shapes[i];
+  if (i === shapes.length - 1) return s; // already on top — no history entry needed
+  pushHistory();
+  shapes.splice(i, 1); shapes.push(s);
+  render(); return s;
+}
+document.getElementById("btnFrontSel").addEventListener("click", bringToFrontSelected);
+function sendToBackSelected(){
+  const i = shapes.findIndex(x => x.id === selectedId); if (i < 0) return null;
+  const s = shapes[i];
+  if (i === 0) return s; // already at the back — no history entry needed
+  pushHistory();
+  shapes.splice(i, 1); shapes.unshift(s);
+  render(); return s;
+}
+document.getElementById("btnBackSel").addEventListener("click", sendToBackSelected);
+function bringForwardSelected(){
+  const i = shapes.findIndex(x => x.id === selectedId); if (i < 0) return null;
+  const s = shapes[i];
+  if (i === shapes.length - 1) return s; // already on top — no history entry needed
+  pushHistory();
+  shapes[i] = shapes[i + 1]; shapes[i + 1] = s;
+  render(); return s;
+}
+document.getElementById("btnForwardSel").addEventListener("click", bringForwardSelected);
+function sendBackwardSelected(){
+  const i = shapes.findIndex(x => x.id === selectedId); if (i < 0) return null;
+  const s = shapes[i];
+  if (i === 0) return s; // already at the back — no history entry needed
+  pushHistory();
+  shapes[i] = shapes[i - 1]; shapes[i - 1] = s;
+  render(); return s;
+}
+document.getElementById("btnBackwardSel").addEventListener("click", sendBackwardSelected);
+function originSelected(){
+  const s = shapes.find(x => x.id === selectedId); if (!s) return null;
+  const b = bounds(s);
+  if (!b.x && !b.y) return s; // already at the origin — no history entry needed
+  pushHistory();
+  moveShape(s, -b.x, -b.y);
+  render(); return s;
+}
+document.getElementById("btnOriginSel").addEventListener("click", originSelected);
+function setSizeSelected(wFt, hFt){
+  const s = shapes.find(x => x.id === selectedId); if (!s) return null;
+  if (s.type === "text") return null; // text labels keep their readable size
+  const b = bounds(s), cx = b.x + b.w / 2, cy = b.y + b.h / 2;
+  if (s.type === "rect"){
+    const cur = dimNumbers(s);
+    const nwFt = (wFt > 0) ? wFt : cur.wFt, nhFt = (hFt > 0) ? hFt : cur.hFt;
+    if (!(nwFt > 0) || !(nhFt > 0)) return null;
+    const nw = ftToPx(nwFt), nh = ftToPx(nhFt);
+    if (nw === Math.abs(s.w) && nh === Math.abs(s.h)) return s; // already that size — no history entry needed
+    pushHistory();
+    s.x = cx - nw / 2; s.y = cy - nh / 2; s.w = nw; s.h = nh;
+  } else if (s.type === "circle"){
+    if (!(wFt > 0)) return null;
+    const nr = ftToPx(wFt) / 2;
+    if (nr === s.r) return s;
+    pushHistory(); s.r = nr;
+  } else if (s.type === "line" || s.type === "wall"){
+    if (!(wFt > 0)) return null;
+    const len = segLen(s); if (!len) return null;
+    const nl = ftToPx(wFt); if (nl === len) return s;
+    pushHistory();
+    const ux = (s.x2 - s.x1) / len, uy = (s.y2 - s.y1) / len, ex = ux * (nl - len) / 2, ey = uy * (nl - len) / 2;
+    s.x1 -= ex; s.y1 -= ey; s.x2 += ex; s.y2 += ey;
+  } else return null;
+  render(); return s;
+}
+function exactSizePrompt(){
+  const s = shapes.find(x => x.id === selectedId); if (!s) return;
+  if (s.type === "text"){ alert("Text labels can't be resized — select a shape first."); return; }
+  const d = dimNumbers(s); if (!d) return;
+  const ask = (label, cur) => {
+    const v = prompt(label, String(Math.round(cur * 100) / 100));
+    if (v === null) return null;
+    const n = parseFloat(v);
+    return (n > 0) ? n : null;
+  };
+  if (s.type === "rect"){
+    const w = ask("Width in feet:", d.wFt); if (w === null) return;
+    const h = ask("Height in feet:", d.hFt); if (h === null) return;
+    setSizeSelected(w, h);
+  } else if (s.type === "circle"){
+    const dia = ask("Diameter in feet:", d.dFt); if (dia === null) return;
+    setSizeSelected(dia);
+  } else {
+    const len = ask("Length in feet:", d.lengthFt); if (len === null) return;
+    setSizeSelected(len);
+  }
+}
+document.getElementById("btnExactSel").addEventListener("click", exactSizePrompt);
+function flipSelected(axis){
+  const s = shapes.find(x => x.id === selectedId); if (!s) return null;
+  if (s.type === "text") return null; // text labels stay readable, not mirrored
+  if (axis !== "h" && axis !== "v") return null;
+  if (s.type === "rect" || s.type === "circle") return s; // symmetric around their center — a mirror changes nothing
+  if (s.type === "line" || s.type === "wall"){
+    const b = bounds(s), cx = b.x + b.w / 2, cy = b.y + b.h / 2;
+    const nx1 = axis === "h" ? 2 * cx - s.x1 : s.x1, nx2 = axis === "h" ? 2 * cx - s.x2 : s.x2;
+    const ny1 = axis === "v" ? 2 * cy - s.y1 : s.y1, ny2 = axis === "v" ? 2 * cy - s.y2 : s.y2;
+    if (nx1 === s.x1 && ny1 === s.y1 && nx2 === s.x2 && ny2 === s.y2) return s; // already mirrored — no history entry needed
+    pushHistory();
+    s.x1 = nx1; s.y1 = ny1; s.x2 = nx2; s.y2 = ny2;
+  } else return null;
+  render(); return s;
+}
+function flipHSelected(){ return flipSelected("h"); }
+function flipVSelected(){ return flipSelected("v"); }
+document.getElementById("btnFlipH").addEventListener("click", flipHSelected);
+document.getElementById("btnFlipV").addEventListener("click", flipVSelected);
+function selectNext(dir){
+  if (!shapes.length) return null;
+  const step = dir === -1 ? -1 : 1;
+  const idx = shapes.findIndex(x => x.id === selectedId);
+  const next = idx === -1 ? (step === 1 ? shapes[0] : shapes[shapes.length - 1])
+                           : shapes[(idx + step + shapes.length) % shapes.length];
+  selectedId = next.id;
+  render(); return next;
+}
+document.getElementById("btnNextSel").addEventListener("click", () => selectNext(1));
+function setPositionSelected(xFt, yFt){
+  const s = shapes.find(x => x.id === selectedId); if (!s) return null;
+  const b = bounds(s);
+  const nx = (xFt === null || xFt === undefined || !isFinite(xFt)) ? b.x : ftToPx(xFt);
+  const ny = (yFt === null || yFt === undefined || !isFinite(yFt)) ? b.y : ftToPx(yFt);
+  const dx = nx - b.x, dy = ny - b.y;
+  if (!dx && !dy) return s; // already at that position — no history entry needed
+  pushHistory();
+  moveShape(s, dx, dy);
+  render(); return s;
+}
+function exactPosPrompt(){
+  const s = shapes.find(x => x.id === selectedId); if (!s) return;
+  const b = bounds(s);
+  const ask = (label, cur) => {
+    const v = prompt(label, String(Math.round(cur * 100) / 100));
+    if (v === null) return null;
+    const n = parseFloat(v);
+    return isFinite(n) ? n : null;
+  };
+  const x = ask("X position in feet (left edge, from origin):", pxToFt(b.x)); if (x === null) return;
+  const y = ask("Y position in feet (top edge, from origin):", pxToFt(b.y)); if (y === null) return;
+  setPositionSelected(x, y);
+}
+document.getElementById("btnPosSel").addEventListener("click", exactPosPrompt);
+function setTextSelected(text){
+  const s = shapes.find(x => x.id === selectedId); if (!s) return null;
+  if (s.type !== "text") return null; // only text labels carry editable text
+  const t = (text === null || text === undefined) ? "" : String(text).trim();
+  if (!t) return null; // an empty label is no label — leave the old text in place
+  if (t === s.text) return s; // already that text — no history entry needed
+  pushHistory();
+  s.text = t;
+  render(); return s;
+}
+function editTextPrompt(){
+  const s = shapes.find(x => x.id === selectedId); if (!s) return;
+  if (s.type !== "text"){ alert("Select a text label first — Edit Label only changes label text."); return; }
+  const v = prompt("Label text:", s.text);
+  if (v === null) return;
+  setTextSelected(v);
+}
+document.getElementById("btnEditTextSel").addEventListener("click", editTextPrompt);
+function nudgeSelected(dx, dy){
+  const s = shapes.find(x => x.id === selectedId); if (!s) return null;
+  if (!dx && !dy) return s;
+  pushHistory();
+  moveShape(s, dx, dy);
+  render(); return s;
+}
+document.getElementById("btnNudgeL").addEventListener("click", () => nudgeSelected(-GRID / 4, 0));
+document.getElementById("btnNudgeR").addEventListener("click", () => nudgeSelected(GRID / 4, 0));
+document.getElementById("btnNudgeU").addEventListener("click", () => nudgeSelected(0, -GRID / 4));
+document.getElementById("btnNudgeD").addEventListener("click", () => nudgeSelected(0, GRID / 4));
+document.getElementById("btnClear").addEventListener("click", () => {
+  if (!shapes.length) return;
+  if (!confirm("Clear the whole sketch?")) return;
+  pushHistory(); shapes = []; selectedId = null; lastMeasure = null; render();
+});
+document.getElementById("btnRoom").addEventListener("click", () => {
+  pushHistory();
+  const room = { id: uid++, type: "rect", x: GRID, y: GRID, w: ftToPx(16), h: ftToPx(12) };
+  shapes.push(room);
+  shapes.push({ id: uid++, type: "text", x: GRID + 8, y: GRID + 24, text: "Room" });
+  selectedId = room.id; render();
+});
+document.addEventListener("keydown", e => {
+  if (e.target.matches("input,textarea")) return;
+  if ((e.key === "Delete" || e.key === "Backspace") && selectedId != null){
+    pushHistory(); shapes = shapes.filter(s => s.id !== selectedId); selectedId = null; render();
+  }
+  if (!e.ctrlKey && !e.metaKey && e.key.toLowerCase() === "r" && selectedId != null){ rotateSelected(); }
+  if (!e.ctrlKey && !e.metaKey && (e.key === "+" || e.key === "=") && selectedId != null){ resizeSelected(GRID); }
+  if (!e.ctrlKey && !e.metaKey && (e.key === "-" || e.key === "_") && selectedId != null){ resizeSelected(-GRID); }
+  if (!e.ctrlKey && !e.metaKey && e.key.toLowerCase() === "s" && selectedId != null){ snapSelected(); }
+  if (!e.ctrlKey && !e.metaKey && e.key.toLowerCase() === "c" && selectedId != null){ centerSelected(); }
+  if (!e.ctrlKey && !e.metaKey && e.key.toLowerCase() === "f" && selectedId != null){ bringToFrontSelected(); }
+  if (!e.ctrlKey && !e.metaKey && e.key.toLowerCase() === "b" && selectedId != null){ sendToBackSelected(); }
+  if (!e.ctrlKey && !e.metaKey && e.key.toLowerCase() === "o" && selectedId != null){ originSelected(); }
+  if (!e.ctrlKey && !e.metaKey && e.key.toLowerCase() === "e" && selectedId != null){ exactSizePrompt(); }
+  if (!e.ctrlKey && !e.metaKey && e.key.toLowerCase() === "h" && selectedId != null){ flipHSelected(); }
+  if (!e.ctrlKey && !e.metaKey && e.key.toLowerCase() === "v" && selectedId != null){ flipVSelected(); }
+  if (!e.ctrlKey && !e.metaKey && e.key.toLowerCase() === "p" && selectedId != null){ exactPosPrompt(); }
+  if (!e.ctrlKey && !e.metaKey && e.key.toLowerCase() === "t" && selectedId != null){ editTextPrompt(); }
+  if (!e.ctrlKey && !e.metaKey && e.key === "0"){ resetView(); }
+  if (!e.ctrlKey && !e.metaKey && e.key === "9"){ fitView(); }
+  if (!e.ctrlKey && !e.metaKey && e.key.toLowerCase() === "l" && selectedId != null){ focusSelected(); }
+  if (!e.ctrlKey && !e.metaKey && e.key.toLowerCase() === "k" && selectedId != null){ keepSelectedOnly(); }
+  if (!e.ctrlKey && !e.metaKey && e.key === "]" && selectedId != null){ bringForwardSelected(); }
+  if (!e.ctrlKey && !e.metaKey && e.key === "[" && selectedId != null){ sendBackwardSelected(); }
+  if (e.key === "Tab"){ e.preventDefault(); selectNext(e.shiftKey ? -1 : 1); }
+  if (selectedId != null && e.key.startsWith("Arrow")){
+    e.preventDefault();
+    const step = e.shiftKey ? GRID : GRID / 4; // plain arrow = quarter square, Shift+arrow = full square
+    if (e.key === "ArrowLeft") nudgeSelected(-step, 0);
+    else if (e.key === "ArrowRight") nudgeSelected(step, 0);
+    else if (e.key === "ArrowUp") nudgeSelected(0, -step);
+    else if (e.key === "ArrowDown") nudgeSelected(0, step);
+  }
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z" && !e.shiftKey){ e.preventDefault(); undo(); }
+  if ((e.ctrlKey || e.metaKey) && (e.key.toLowerCase() === "y" || (e.key.toLowerCase() === "z" && e.shiftKey))){ e.preventDefault(); redo(); }
+});
+
+/* ================= Save / load sketches ================= */
+function getStore(){ try { return JSON.parse(localStorage.getItem(LS_SKETCHES) || "{}"); } catch(e){ return {}; } }
+function setStore(o){ localStorage.setItem(LS_SKETCHES, JSON.stringify(o)); }
+function saveSketch(name){
+  if (!name) return false;
+  const st = getStore();
+  st[name] = { shapes, scaleFt, savedAt: new Date().toISOString() };
+  setStore(st); refreshSketchList(); return true;
+}
+function loadSketch(name){
+  const st = getStore(); if (!st[name]) return false;
+  pushHistory();
+  shapes = JSON.parse(JSON.stringify(st[name].shapes || []));
+  scaleFt = st[name].scaleFt || 1;
+  document.getElementById("scaleFt").value = scaleFt;
+  uid = shapes.reduce((m, s) => Math.max(m, s.id || 0), 0) + 1;
+  selectedId = null; lastMeasure = null; render(); return true;
+}
+function refreshSketchList(){
+  const st = getStore(), names = Object.keys(st);
+  const box = document.getElementById("sketchList");
+  if (!names.length){ box.innerHTML = '<p class="small" style="margin:8px 0 2px">No saved sketches yet.</p>'; return; }
+  box.innerHTML = "";
+  for (const nm of names){
+    const row = document.createElement("div"); row.className = "sketch-row";
+    const span = document.createElement("span"); span.className = "nm"; span.textContent = nm;
+    const bLoad = document.createElement("button"); bLoad.className = "act"; bLoad.textContent = "📂 Load";
+    bLoad.addEventListener("click", () => loadSketch(nm));
+    const bDel = document.createElement("button"); bDel.className = "act danger"; bDel.textContent = "🗑️";
+    bDel.addEventListener("click", () => { const s2 = getStore(); delete s2[nm]; setStore(s2); refreshSketchList(); });
+    row.append(span, bLoad, bDel); box.appendChild(row);
+  }
+}
+document.getElementById("btnSave").addEventListener("click", () => {
+  const nm = document.getElementById("sketchName").value.trim();
+  if (!nm){ alert("Give the sketch a name first."); return; }
+  saveSketch(nm);
+  document.getElementById("sketchName").value = "";
+});
+
+/* ================= Export / import ================= */
+function download(name, blob){
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob); a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+}
+document.getElementById("btnPng").addEventListener("click", () => {
+  const out = document.createElement("canvas"); out.width = cv.width; out.height = cv.height;
+  const octx = out.getContext("2d");
+  octx.fillStyle = "#0d1322"; octx.fillRect(0, 0, out.width, out.height);
+  octx.drawImage(cv, 0, 0);
+  out.toBlob(b => download("cadn8-sketch.png", b), "image/png");
+});
+document.getElementById("btnJson").addEventListener("click", () => {
+  download("cadn8-sketch.json", new Blob([JSON.stringify({ app: APP_NAME, version: APP_VERSION, shapes, scaleFt }, null, 2)], { type: "application/json" }));
+});
+document.getElementById("btnImport").addEventListener("click", () => document.getElementById("fileImport").click());
+document.getElementById("fileImport").addEventListener("change", e => {
+  const f = e.target.files[0]; if (!f) return;
+  f.text().then(t => {
+    try {
+      const d = JSON.parse(t);
+      pushHistory();
+      shapes = d.shapes || []; scaleFt = d.scaleFt || 1;
+      document.getElementById("scaleFt").value = scaleFt;
+      uid = shapes.reduce((m, s) => Math.max(m, s.id || 0), 0) + 1;
+      selectedId = null; render();
+    } catch(err){ alert("That file could not be read as a CADN8 JSON."); }
+  });
+  e.target.value = "";
+});
+
+/* ================= Sizing / init ================= */
+function fitCanvas(){
+  const w = document.getElementById("canvasWrap").clientWidth;
+  const keep = document.createElement("canvas");
+  if (cv.width){ keep.width = cv.width; keep.height = cv.height; keep.getContext("2d").drawImage(cv, 0, 0); }
+  cv.width = Math.max(300, w); cv.height = 520;
+  render();
+}
+window.addEventListener("resize", fitCanvas);
+(function init(){
+  document.getElementById("verPill").textContent = "v" + APP_VERSION;
+  try {
+    const cur = JSON.parse(localStorage.getItem(LS_CURRENT) || "null");
+    if (cur && Array.isArray(cur.shapes)){ shapes = cur.shapes; scaleFt = cur.scaleFt || 1; document.getElementById("scaleFt").value = scaleFt; uid = shapes.reduce((m, s) => Math.max(m, s.id || 0), 0) + 1; }
+  } catch(e){}
+  refreshSketchList(); syncUndoBtns(); fitCanvas(); render();
+})();
+
+/* ================= Public API (used by the app's own tests) ================= */
+window.CADSketch = {
+  name: APP_NAME, version: APP_VERSION,
+  get shapes(){ return shapes; },
+  get view(){ return { ox: view.ox, oy: view.oy }; },
+  get scaleFt(){ return scaleFt; },
+  get gridPx(){ return GRID; },
+  setScale(ft){ scaleFt = ft; document.getElementById("scaleFt").value = ft; render(); },
+  addRect(x, y, w, h){ pushHistory(); const s = { id: uid++, type: "rect", x, y, w, h }; shapes.push(s); render(); return s; },
+  addLine(x1, y1, x2, y2, type){ pushHistory(); const s = { id: uid++, type: type || "line", x1, y1, x2, y2 }; shapes.push(s); render(); return s; },
+  addCircle(cx, cy, r){ pushHistory(); const s = { id: uid++, type: "circle", cx, cy, r }; shapes.push(s); render(); return s; },
+  addText(x, y, text){ pushHistory(); const s = { id: uid++, type: "text", x, y, text }; shapes.push(s); render(); return s; },
+  dimNumbers, dimLabel, areaNumbers, areaSelected, angleNumbers, angleSelected, totalsNumbers, totalsSketch, boundsNumbers, boundsSketch, midNumbers, midSketch, diagNumbers, diagSketch, ratioNumbers, ratioSketch, perimNumbers, perimSketch, coverNumbers, coverSketch, fillNumbers, fillSketch, gapNumbers, gapSketch, edgeNumbers, edgeSketch, typesNumbers, typesSketch, pxToFt, fmtFt,
+  saveSketch, loadSketch, duplicateSelected, rotateSelected, nudgeSelected, resizeSelected, snapSelected, centerSelected, resetView, fitView, focusSelected, keepSelectedOnly, bringToFrontSelected, sendToBackSelected, bringForwardSelected, sendBackwardSelected, originSelected, setSizeSelected, flipSelected, flipHSelected, flipVSelected, selectNext, setPositionSelected, setTextSelected,
+  measure(a, b){ const ft = pxToFt(Math.hypot(b.x - a.x, b.y - a.y)); lastMeasure = { ft, pts: [a, b] }; render(); return ft; },
+  clear(){ shapes = []; selectedId = null; lastMeasure = null; render(); }
+};
+</script>
+</body>
+</html>
