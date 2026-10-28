@@ -96,13 +96,30 @@ header{box-shadow:0 2px 18px rgba(255,122,26,.16)}
   #actBar button.act{grid-column:span 2}
   #actBar #btnNudgeL,#actBar #btnNudgeU,#actBar #btnNudgeD,#actBar #btnNudgeR{grid-column:span 1}
 }
+/* ---- UI polish (cycle 62): tidy desktop action sidebar ---- */
+@media (min-width:1024px){
+  #actBar .row{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+  #actBar button.act{grid-column:span 2;width:100%;min-height:40px}
+  #actBar .lbl{grid-column:1/-1;padding-top:4px}
+  #actBar #btnNudgeL,#actBar #btnNudgeU,#actBar #btnNudgeD,#actBar #btnNudgeR{grid-column:span 1}
+}
+/* ---- Effects (cycle 63): canvas glow breathing + entrance fade-up + sketch-row hover lift, reduced-motion safe ---- */
+/* CSS-only: no JS, no canvas redraw cost. The cycle-55 global reduced-motion rule already kills these animations. */
+#canvasWrap{animation:cadWrapGlow 3.2s ease-in-out infinite alternate}
+@keyframes cadWrapGlow{from{box-shadow:0 0 0 1px rgba(45,212,191,.14),0 8px 28px rgba(0,0,0,.5)}to{box-shadow:0 0 0 1px rgba(45,212,191,.38),0 8px 32px rgba(0,0,0,.5),0 0 22px rgba(45,212,191,.22)}}
+#stage,#actBar,#saveBar,#exportBar{animation:cadFadeUp .38s ease both}
+#actBar{animation-delay:.06s}
+#saveBar{animation-delay:.12s}
+#exportBar{animation-delay:.18s}
+@keyframes cadFadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.sketch-row:hover{border-color:var(--gold);transform:translateY(-1px)}
 </style>
 </head>
 <body>
 <header>
   <div class="logo">📐</div>
   <div>
-    <h1>📐 CADN8 <span id="verPill" style="font-size:10px;color:#0b1512;background:var(--gold);border-radius:999px;padding:2px 7px;vertical-align:middle;letter-spacing:.03em">v1.0.60</span></h1>
+    <h1>📐 CADN8 <span id="verPill" style="font-size:10px;color:#0b1512;background:var(--gold);border-radius:999px;padding:2px 7px;vertical-align:middle;letter-spacing:.03em">v1.0.65</span></h1>
     <p>Quick job-site sketches — rooms, decks, mounting walls</p>
   </div>
 </header>
@@ -178,6 +195,7 @@ header{box-shadow:0 2px 18px rgba(255,122,26,.16)}
     <div class="row">
       <button class="act danger" id="btnDelete" title="Delete selected">🗑️ Delete</button>
       <button class="act" id="btnDup" title="Duplicate the selected shape (offset copy)">⧉ Duplicate</button>
+      <button class="act" id="btnArraySel" title="Array the selected shape: step out extra copies in a row to the right, one square apart, in one Undo step (A key)">⧉→ Array</button>
       <button class="act" id="btnRotate" title="Rotate the selected shape 90 degrees around its center">↻ Rotate 90°</button>
       <button class="act" id="btnRotateCCW" title="Rotate the selected shape 90 degrees counter-clockwise around its center (Shift+R key)">↺ Rotate −90°</button>
       <button class="act" id="btnGrow" title="Grow the selected shape by one square around its center (+ key)">⤢ Grow</button>
@@ -228,7 +246,7 @@ header{box-shadow:0 2px 18px rgba(255,122,26,.16)}
       <button class="act" id="btnImport">⬆️ Import JSON</button>
       <input type="file" id="fileImport" accept=".json,application/json" hidden>
     </div>
-    <p class="small" style="margin:8px 0 0">Tip: dimensions under each shape come from the scale above. Change “1 square = ft” and every label updates. Tap a shape with Select to move or delete it. Nudge a selected shape with the ◀▲▼▶ buttons or arrow keys (Shift + arrow = a full square). Grow or shrink it with ⤢/⤡ or the +/− keys — it resizes around its center. Tap ↺ Rotate −90° (or press Shift+R) to rotate a selected shape 90° counter-clockwise around its center — the other way from ↻ Rotate 90° (R) — handy for undoing a rotation direction or turning a run the other way; a rect swaps its width and height either way, circles are unchanged, and text labels are never rotated. Tap ⊞ Snap (or press S) to pull a selected shape back onto the nearest grid square. Dragging a shape with Select snaps it too — to the grid, and to any other shape’s ends, corners, edge middles, or center when you get close; the teal marker shows the snap point. New lines, walls, rectangles, and circles snap their start and end points the same way, so ends can meet exactly. Tap ◎ Center (or press C) to center a selected shape in the current view. Use ⤒ Front / ⤓ Back (or F / B) to layer a selected shape on top of or behind overlapping shapes. Tap ⌂ Origin (or press O) to move a selected shape so its top-left lands on the origin (0,0). Tap 📐 Exact Size (or press E) to type an exact size in feet for a selected shape — width × height for a rect, diameter for a circle, length for a line or wall — resized around its center. Tap ⬜ Square (or press Q) to make a selected rectangle square — both sides become its longest side, around its center — handy for pads, tiles, footings, and square rooms. Tap ⇋ Flip H / ⇅ Flip V (or press H / V) to mirror a selected line or wall around its center — handy for flipping a slope or run direction; rects and circles are symmetric, so a flip leaves them unchanged. Tap 📍 Exact Pos (or press P) to move a selected shape to an exact position in feet — its top-left X and Y from the origin. Select a text label and tap ✏️ Edit Label (or press T) to rename it in place without deleting and retyping it. Use ↑ Forward / ↓ Backward (or ] / [) to move a selected shape just one layer — swapping with the shape right above or below it — instead of jumping all the way to the front or back. After panning around with ✋ Pan, tap 🧭 Reset View (or press 0) to jump the view straight back to the origin. Tap 🔍 Fit View (or press 9) to center the whole sketch in the view at once — handy after drawing or loading shapes that landed off-screen. Tap 🎯 Focus (or press L) to center the view on just the selected shape without moving it — handy for jumping straight to one shape in a big sketch. Tap ⭐ Keep Only (or press K) to keep just the selected shape and delete every other shape — handy for isolating one part of a sketch; Undo brings the rest back. The Area readout in the status bar shows the selected shape's area and perimeter in real feet — a rect gives its floor area and wall run, a circle its area and circumference, and a line or wall just its length — handy for quick material estimates. The Angle readout next to it shows how steep a selected line or wall runs, from 0° (level) to 90° (straight up) — handy for checking a ramp, pitch, or brace angle at a glance. The Total readout adds up the whole sketch — combined floor area of every rect and circle plus the combined length of every line and wall — handy for a quick whole-job material estimate without adding shapes up one by one. The Bounds readout next to it shows the whole sketch's overall footprint — its combined width × height in feet from the leftmost to the rightmost and topmost to bottommost edge — handy for checking whether a layout fits a room, sheet, or trailer at a glance. The Types readout next to it breaks the sketch down by shape — how many rects, circles, lines, walls, and labels it holds — handy for a quick count before ordering materials or checking nothing was missed. The Mid readout next to it shows the center point of the whole sketch in feet — the middle of its overall footprint — handy for finding the middle of a layout for a centered fixture, mount, or light. The Diag readout next to it shows the corner-to-corner diagonal of the whole sketch's footprint in feet — handy for checking a layout is square (equal diagonals) or whether it fits corner-to-corner in a trailer, sheet, or room. The Ratio readout next to it shows the aspect ratio of the whole sketch's footprint — its width divided by its height, like 1.33 : 1 for a 16 × 12 ft room — handy for scaling a layout up or down, matching it to a sheet or screen, or checking a photo or print will fit without stretching. The Perim readout next to it shows the distance around the whole sketch's footprint in feet — twice its width plus twice its height — handy for estimating trim, edging, fencing, or tape needed to go around a layout. The Cover readout next to it shows the footprint area of the whole sketch in square feet — its overall width times its overall height — handy for estimating flooring, sheet goods, paint coverage, or drop cloths needed to cover a layout's full footprint. The Fill readout next to it shows what share of that footprint the shapes themselves actually cover, as a percent — a single room filling its outline reads 100%, while gaps and open space inside the outline pull it down — handy for spotting wasted space in a layout or estimating how much of a sheet, floor, or lot is really in use. The Gap readout next to it shows that same open space as an absolute number — the footprint area minus the area the shapes themselves cover, in square feet — handy for estimating leftover sheet goods, offcuts, or how much open floor a layout leaves in real numbers instead of just a percent. The Edge readout next to it shows the total edge length of every shape in the sketch added together — each rect's perimeter, each circle's circumference, and each line or wall's length, in feet — handy for estimating trim, edging, tape, or cut length across a whole layout, not just around its outside footprint. The Span readout next to it shows the longest side of the whole sketch's footprint in feet — the larger of its width and height — handy for checking the longest dimension a layout needs, like whether it fits a trailer bed, a sheet, or along one wall. The Short readout next to it shows the shortest side of that same footprint in feet — the smaller of its width and height — handy for checking the tight dimension a layout needs, like whether it clears a doorway, a gate, or the narrow end of a sheet or trailer. The Diff readout next to it shows how far that footprint is from square — its longest side minus its shortest side, in feet — so a 16 × 12 ft room reads 4 ft and a perfectly square footprint reads 0 ft, handy for spotting how much a layout leans one way before you commit to it. The Avg readout next to it shows the average floor area per area shape in the sketch — the total floor area of its rects and circles divided by how many of them there are, in square feet — handy for comparing room sizes at a glance or estimating a typical bay, stall, or pad size without doing the division yourself; lines, walls, and labels have no floor area, so they are left out of the average. The Small readout next to it shows the smallest floor area among the sketch's area shapes in square feet — the little room, closet, or pad in a layout — handy for checking the tightest space still works or spotting a shape drawn too small by mistake; lines, walls, and labels have no floor area, so they are left out, and a sketch with no rects or circles shows a dash. The Big readout next to it shows the largest floor area among those same area shapes in square feet — the main room or biggest pad in a layout — handy for checking the largest space drives the material order or spotting a shape drawn too big by mistake; lines, walls, and labels are left out, and a sketch with no rects or circles shows a dash. The Range readout next to it shows the spread between that largest and smallest floor area in square feet — the biggest area minus the smallest — so a layout of same-size rooms reads 0 and a main room next to a small closet reads a big number, handy for seeing at a glance how varied the spaces in a layout are; lines, walls, and labels are left out, and a sketch with no rects or circles shows a dash. The Median readout next to it shows the middle floor area among those same area shapes in square feet — half the spaces are bigger and half are smaller — so one huge room does not skew it the way it skews the average; handy for a typical room size in a varied layout; lines, walls, and labels are left out, and a sketch with no rects or circles shows a dash. The AvgLen readout next to it shows the average length per line or wall in the sketch in feet — the total line and wall length divided by how many lines and walls there are — handy for a typical run, brace, or wall length without doing the division yourself; rects, circles, and labels have no single length, so they are left out, and a sketch with no lines or walls shows a dash. The MaxLen readout next to it shows the longest single line or wall in the sketch in feet — the biggest run, brace, or wall — handy for checking the longest piece you need to cut, carry, or fit, or spotting a line drawn too long by mistake; rects, circles, and labels are left out, and a sketch with no lines or walls shows a dash. The MinLen readout next to it shows the shortest single line or wall in the sketch in feet — the smallest run, brace, or wall — handy for checking the shortest piece you need to cut or spotting a line drawn too short by mistake; rects, circles, and labels are left out, and a sketch with no lines or walls shows a dash. The RangeLen readout next to it shows the spread between that longest and shortest line or wall in feet — the longest minus the shortest — so same-length runs read 0 and a long wall next to a short brace reads a big number, handy for seeing how varied the runs in a layout are; rects, circles, and labels are left out, and a sketch with no lines or walls shows a dash. The MedianLen readout next to it shows the middle length among those same lines and walls in feet — half the runs are longer and half are shorter — so one very long wall does not skew it the way it skews the average; handy for a typical run, brace, or wall length in a varied layout; rects, circles, and labels are left out, and a sketch with no lines or walls shows a dash. The SumLen readout next to it shows the combined length of every line and wall in the sketch added together, in feet — handy for a total material run (trim, cable, pipe, or wall length) across a whole layout without adding runs up one by one; rects, circles, and labels are left out, and a sketch with no lines or walls shows a dash. The WallLen readout next to it shows the combined length of walls only, in feet — plain lines are left out — handy for a wall-only run (framing, paint, or trim on real walls) separate from braces, runs, and measurements drawn as plain lines; rects, circles, labels, and plain lines are left out, and a sketch with no walls shows a dash. The LineLen readout next to it shows the combined length of plain lines only, in feet — walls are left out — handy for a line-only run (braces, cable, pipe, or measurements) separate from real walls; LineLen plus WallLen adds up to SumLen; rects, circles, labels, and walls are left out, and a sketch with no plain lines shows a dash. The AvgWall readout next to it shows the average length per wall in the sketch in feet — the total wall length divided by how many walls there are — handy for a typical wall length for framing, paint, or trim without doing the division yourself; plain lines, rects, circles, and labels are left out, and a sketch with no walls shows a dash. The AvgLine readout next to it shows the average length per plain line in the sketch in feet — the total plain-line length divided by how many plain lines there are — handy for a typical brace, cable, pipe, or measurement run without doing the division yourself; walls, rects, circles, and labels are left out, and a sketch with no plain lines shows a dash.</p>
+    <p class="small" style="margin:8px 0 0">Tip: dimensions under each shape come from the scale above. Change “1 square = ft” and every label updates. Tap a shape with Select to move or delete it. Nudge a selected shape with the ◀▲▼▶ buttons or arrow keys (Shift + arrow = a full square). Grow or shrink it with ⤢/⤡ or the +/− keys — it resizes around its center. Tap ↺ Rotate −90° (or press Shift+R) to rotate a selected shape 90° counter-clockwise around its center — the other way from ↻ Rotate 90° (R) — handy for undoing a rotation direction or turning a run the other way; a rect swaps its width and height either way, circles are unchanged, and text labels are never rotated. Tap ⊞ Snap (or press S) to pull a selected shape back onto the nearest grid square. Dragging a shape with Select snaps it too — to the grid, and to any other shape’s ends, corners, edge middles, or center when you get close; the teal marker shows the snap point. New lines, walls, rectangles, and circles snap their start and end points the same way, so ends can meet exactly. Tap ⧉→ Array (or press A) with a shape selected to step out extra copies of it in a row to the right — each copy one square past the last — handy for repeating studs, posts, tiles, or bays; the whole row lands as a single Undo step, so one Undo removes it all. Tap ◎ Center (or press C) to center a selected shape in the current view. Use ⤒ Front / ⤓ Back (or F / B) to layer a selected shape on top of or behind overlapping shapes. Tap ⌂ Origin (or press O) to move a selected shape so its top-left lands on the origin (0,0). Tap 📐 Exact Size (or press E) to type an exact size in feet for a selected shape — width × height for a rect, diameter for a circle, length for a line or wall — resized around its center. Tap ⬜ Square (or press Q) to make a selected rectangle square — both sides become its longest side, around its center — handy for pads, tiles, footings, and square rooms. Tap ⇋ Flip H / ⇅ Flip V (or press H / V) to mirror a selected line or wall around its center — handy for flipping a slope or run direction; rects and circles are symmetric, so a flip leaves them unchanged. Tap 📍 Exact Pos (or press P) to move a selected shape to an exact position in feet — its top-left X and Y from the origin. Select a text label and tap ✏️ Edit Label (or press T) to rename it in place without deleting and retyping it. Use ↑ Forward / ↓ Backward (or ] / [) to move a selected shape just one layer — swapping with the shape right above or below it — instead of jumping all the way to the front or back. After panning around with ✋ Pan, tap 🧭 Reset View (or press 0) to jump the view straight back to the origin. Tap 🔍 Fit View (or press 9) to center the whole sketch in the view at once — handy after drawing or loading shapes that landed off-screen. Tap 🎯 Focus (or press L) to center the view on just the selected shape without moving it — handy for jumping straight to one shape in a big sketch. Tap ⭐ Keep Only (or press K) to keep just the selected shape and delete every other shape — handy for isolating one part of a sketch; Undo brings the rest back. The Area readout in the status bar shows the selected shape's area and perimeter in real feet — a rect gives its floor area and wall run, a circle its area and circumference, and a line or wall just its length — handy for quick material estimates. The Angle readout next to it shows how steep a selected line or wall runs, from 0° (level) to 90° (straight up) — handy for checking a ramp, pitch, or brace angle at a glance. The Total readout adds up the whole sketch — combined floor area of every rect and circle plus the combined length of every line and wall — handy for a quick whole-job material estimate without adding shapes up one by one. The Bounds readout next to it shows the whole sketch's overall footprint — its combined width × height in feet from the leftmost to the rightmost and topmost to bottommost edge — handy for checking whether a layout fits a room, sheet, or trailer at a glance. The Types readout next to it breaks the sketch down by shape — how many rects, circles, lines, walls, and labels it holds — handy for a quick count before ordering materials or checking nothing was missed. The Mid readout next to it shows the center point of the whole sketch in feet — the middle of its overall footprint — handy for finding the middle of a layout for a centered fixture, mount, or light. The Diag readout next to it shows the corner-to-corner diagonal of the whole sketch's footprint in feet — handy for checking a layout is square (equal diagonals) or whether it fits corner-to-corner in a trailer, sheet, or room. The Ratio readout next to it shows the aspect ratio of the whole sketch's footprint — its width divided by its height, like 1.33 : 1 for a 16 × 12 ft room — handy for scaling a layout up or down, matching it to a sheet or screen, or checking a photo or print will fit without stretching. The Perim readout next to it shows the distance around the whole sketch's footprint in feet — twice its width plus twice its height — handy for estimating trim, edging, fencing, or tape needed to go around a layout. The Cover readout next to it shows the footprint area of the whole sketch in square feet — its overall width times its overall height — handy for estimating flooring, sheet goods, paint coverage, or drop cloths needed to cover a layout's full footprint. The Fill readout next to it shows what share of that footprint the shapes themselves actually cover, as a percent — a single room filling its outline reads 100%, while gaps and open space inside the outline pull it down — handy for spotting wasted space in a layout or estimating how much of a sheet, floor, or lot is really in use. The Gap readout next to it shows that same open space as an absolute number — the footprint area minus the area the shapes themselves cover, in square feet — handy for estimating leftover sheet goods, offcuts, or how much open floor a layout leaves in real numbers instead of just a percent. The Edge readout next to it shows the total edge length of every shape in the sketch added together — each rect's perimeter, each circle's circumference, and each line or wall's length, in feet — handy for estimating trim, edging, tape, or cut length across a whole layout, not just around its outside footprint. The Span readout next to it shows the longest side of the whole sketch's footprint in feet — the larger of its width and height — handy for checking the longest dimension a layout needs, like whether it fits a trailer bed, a sheet, or along one wall. The Short readout next to it shows the shortest side of that same footprint in feet — the smaller of its width and height — handy for checking the tight dimension a layout needs, like whether it clears a doorway, a gate, or the narrow end of a sheet or trailer. The Diff readout next to it shows how far that footprint is from square — its longest side minus its shortest side, in feet — so a 16 × 12 ft room reads 4 ft and a perfectly square footprint reads 0 ft, handy for spotting how much a layout leans one way before you commit to it. The Avg readout next to it shows the average floor area per area shape in the sketch — the total floor area of its rects and circles divided by how many of them there are, in square feet — handy for comparing room sizes at a glance or estimating a typical bay, stall, or pad size without doing the division yourself; lines, walls, and labels have no floor area, so they are left out of the average. The Small readout next to it shows the smallest floor area among the sketch's area shapes in square feet — the little room, closet, or pad in a layout — handy for checking the tightest space still works or spotting a shape drawn too small by mistake; lines, walls, and labels have no floor area, so they are left out, and a sketch with no rects or circles shows a dash. The Big readout next to it shows the largest floor area among those same area shapes in square feet — the main room or biggest pad in a layout — handy for checking the largest space drives the material order or spotting a shape drawn too big by mistake; lines, walls, and labels are left out, and a sketch with no rects or circles shows a dash. The Range readout next to it shows the spread between that largest and smallest floor area in square feet — the biggest area minus the smallest — so a layout of same-size rooms reads 0 and a main room next to a small closet reads a big number, handy for seeing at a glance how varied the spaces in a layout are; lines, walls, and labels are left out, and a sketch with no rects or circles shows a dash. The Median readout next to it shows the middle floor area among those same area shapes in square feet — half the spaces are bigger and half are smaller — so one huge room does not skew it the way it skews the average; handy for a typical room size in a varied layout; lines, walls, and labels are left out, and a sketch with no rects or circles shows a dash. The AvgLen readout next to it shows the average length per line or wall in the sketch in feet — the total line and wall length divided by how many lines and walls there are — handy for a typical run, brace, or wall length without doing the division yourself; rects, circles, and labels have no single length, so they are left out, and a sketch with no lines or walls shows a dash. The MaxLen readout next to it shows the longest single line or wall in the sketch in feet — the biggest run, brace, or wall — handy for checking the longest piece you need to cut, carry, or fit, or spotting a line drawn too long by mistake; rects, circles, and labels are left out, and a sketch with no lines or walls shows a dash. The MinLen readout next to it shows the shortest single line or wall in the sketch in feet — the smallest run, brace, or wall — handy for checking the shortest piece you need to cut or spotting a line drawn too short by mistake; rects, circles, and labels are left out, and a sketch with no lines or walls shows a dash. The RangeLen readout next to it shows the spread between that longest and shortest line or wall in feet — the longest minus the shortest — so same-length runs read 0 and a long wall next to a short brace reads a big number, handy for seeing how varied the runs in a layout are; rects, circles, and labels are left out, and a sketch with no lines or walls shows a dash. The MedianLen readout next to it shows the middle length among those same lines and walls in feet — half the runs are longer and half are shorter — so one very long wall does not skew it the way it skews the average; handy for a typical run, brace, or wall length in a varied layout; rects, circles, and labels are left out, and a sketch with no lines or walls shows a dash. The SumLen readout next to it shows the combined length of every line and wall in the sketch added together, in feet — handy for a total material run (trim, cable, pipe, or wall length) across a whole layout without adding runs up one by one; rects, circles, and labels are left out, and a sketch with no lines or walls shows a dash. The WallLen readout next to it shows the combined length of walls only, in feet — plain lines are left out — handy for a wall-only run (framing, paint, or trim on real walls) separate from braces, runs, and measurements drawn as plain lines; rects, circles, labels, and plain lines are left out, and a sketch with no walls shows a dash. The LineLen readout next to it shows the combined length of plain lines only, in feet — walls are left out — handy for a line-only run (braces, cable, pipe, or measurements) separate from real walls; LineLen plus WallLen adds up to SumLen; rects, circles, labels, and walls are left out, and a sketch with no plain lines shows a dash. The AvgWall readout next to it shows the average length per wall in the sketch in feet — the total wall length divided by how many walls there are — handy for a typical wall length for framing, paint, or trim without doing the division yourself; plain lines, rects, circles, and labels are left out, and a sketch with no walls shows a dash. The AvgLine readout next to it shows the average length per plain line in the sketch in feet — the total plain-line length divided by how many plain lines there are — handy for a typical brace, cable, pipe, or measurement run without doing the division yourself; walls, rects, circles, and labels are left out, and a sketch with no plain lines shows a dash.</p>
   </div>
 </main>
 
@@ -236,7 +254,7 @@ header{box-shadow:0 2px 18px rgba(255,122,26,.16)}
 "use strict";
 /* ================= State ================= */
 const APP_NAME = "CADN8";
-const APP_VERSION = "1.0.60";          // bump patch each upgrade-loop cycle
+const APP_VERSION = "1.0.65";          // bump patch each upgrade-loop cycle
 const GRID = 40;                       // px per grid square
 let shapes = [];                       // drawing objects, world px coords
 let selectedId = null;
@@ -258,6 +276,7 @@ const ctx = cv.getContext("2d");
 const LS_SKETCHES = "cadsketch_sketches_v1";
 const LS_CURRENT  = "cadsketch_current_v1";
 const LS_BACKUP   = "cadsketch_sketches_backup_v1"; // cycle 56: previous good named-store copy
+const LS_CUR_BACKUP = "cadsketch_current_backup_v1"; // cycle 64: previous good autosave (current sketch) copy
 
 /* ================= Units ================= */
 const pxToFt = px => px / GRID * scaleFt;
@@ -592,6 +611,87 @@ function typesLabel(t){
     part(t.text, "label", "labels")
   ].filter(Boolean).join(" · ") || "—";
 }
+/* Speed (cycle 61): render() runs on every pointermove, and it used to call ~18
+   whole-sketch *Numbers functions back to back — each one re-traversed every shape
+   and re-ran areaNumbers()/dimNumbers() on it (plus a separate bounds traversal).
+   sketchStats computes every whole-sketch aggregate in ONE pass — one bounds() and
+   one areaNumbers() per shape, additions in the same order as the individual
+   functions, so results are bit-identical — and returns entries shaped exactly
+   like the individual *Numbers returns. The individual functions are unchanged
+   and remain the public API; render() just reads its pills from this one pass. */
+function sketchStats(list){
+  const src = Array.isArray(list) ? list : shapes;
+  let areaSqFt = 0, lengthFt = 0;
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  let edgeFt = 0;
+  let areaTotal = 0, areaN = 0, areaMin = Infinity, areaMax = -Infinity;
+  const areas = [];
+  let lenTotal = 0, lenN = 0, lenMin = null, lenMax = null;
+  const lens = [];
+  let wallTotal = 0, wallN = 0, lineTotal = 0, lineN = 0;
+  const types = { total: src.length, rect: 0, circle: 0, line: 0, wall: 0, text: 0 };
+  for (const s of src){
+    if (Object.prototype.hasOwnProperty.call(types, s.type)) types[s.type]++;
+    const b = bounds(s);
+    if (b.x < minX) minX = b.x;
+    if (b.y < minY) minY = b.y;
+    if (b.x + b.w > maxX) maxX = b.x + b.w;
+    if (b.y + b.h > maxY) maxY = b.y + b.h;
+    const a = areaNumbers(s);
+    if (!a) continue;
+    if (a.perimFt !== null && a.perimFt !== undefined) edgeFt += a.perimFt;
+    if (a.areaSqFt !== null && a.areaSqFt !== undefined){
+      areaSqFt += a.areaSqFt;
+      areaTotal += a.areaSqFt; areaN++;
+      if (a.areaSqFt < areaMin) areaMin = a.areaSqFt;
+      if (a.areaSqFt > areaMax) areaMax = a.areaSqFt;
+      areas.push(a.areaSqFt);
+    } else if ((s.type === "line" || s.type === "wall") && a.perimFt){
+      lengthFt += a.perimFt;
+    }
+    if (s.type === "line" || s.type === "wall"){
+      const len = a.perimFt; // for lines/walls areaNumbers perimFt == dimNumbers lengthFt (both pxToFt(segLen))
+      if (len !== null && len !== undefined){
+        lenTotal += len; lenN++; lens.push(len);
+        if (lenMax === null || len > lenMax) lenMax = len;
+        if (lenMin === null || len < lenMin) lenMin = len;
+        if (s.type === "wall"){ wallTotal += len; wallN++; } else { lineTotal += len; lineN++; }
+      }
+    }
+  }
+  let medianSqFt = null, medianLenFt = null;
+  if (areas.length){
+    areas.sort((x, y) => x - y);
+    const m = Math.floor(areas.length / 2);
+    medianSqFt = areas.length % 2 ? areas[m] : (areas[m - 1] + areas[m]) / 2;
+  }
+  if (lens.length){
+    lens.sort((x, y) => x - y);
+    const m = Math.floor(lens.length / 2);
+    medianLenFt = lens.length % 2 ? lens[m] : (lens[m - 1] + lens[m]) / 2;
+  }
+  return {
+    totals: { count: src.length, areaSqFt, lengthFt },
+    bounds: src.length ? { count: src.length, xFt: pxToFt(minX), yFt: pxToFt(minY), wFt: pxToFt(maxX - minX), hFt: pxToFt(maxY - minY) } : null,
+    edge: src.length ? { count: src.length, edgeFt } : null,
+    avg: areaN ? { count: areaN, avgSqFt: areaTotal / areaN } : null,
+    small: areaN ? { count: areaN, smallSqFt: areaMin } : null,
+    big: areaN ? { count: areaN, bigSqFt: areaMax } : null,
+    range: areaN ? { count: areaN, rangeSqFt: areaMax - areaMin } : null,
+    median: areas.length ? { count: areas.length, medianSqFt } : null,
+    avgLen: lenN ? { count: lenN, avgLenFt: lenTotal / lenN } : null,
+    maxLen: lenN ? { count: lenN, maxLenFt: lenMax } : null,
+    minLen: lenN ? { count: lenN, minLenFt: lenMin } : null,
+    rangeLen: lenN ? { count: lenN, rangeLenFt: lenMax - lenMin } : null,
+    medianLen: lens.length ? { count: lens.length, medianLenFt } : null,
+    sumLen: lenN ? { count: lenN, sumLenFt: lenTotal } : null,
+    wallLen: wallN ? { count: wallN, wallLenFt: wallTotal } : null,
+    lineLen: lineN ? { count: lineN, lineLenFt: lineTotal } : null,
+    avgWall: wallN ? { count: wallN, avgWallFt: wallTotal / wallN } : null,
+    avgLine: lineN ? { count: lineN, avgLineFt: lineTotal / lineN } : null,
+    types
+  };
+}
 function dimLabel(s){
   const d = dimNumbers(s); if (!d) return "";
   if (d.lengthFt !== undefined) return fmtFt(d.lengthFt);
@@ -761,13 +861,13 @@ function render(){
   const selAngle = sel ? angleNumbers(sel) : null;
   setSt("stAngle", !selAngle ? "—"
     : (Math.round(selAngle.angleDeg * 10) / 10) + "° from level");
-  const tot = totalsNumbers(shapes);
+  const stats = sketchStats(shapes); const tot = stats.totals; // Speed (cycle 61): one pass for all whole-sketch stats
   setSt("stTotal", !tot.count ? "—"
     : [
         tot.areaSqFt ? (Math.round(tot.areaSqFt * 10) / 10) + " sq ft total" : null,
         tot.lengthFt ? (Math.round(tot.lengthFt * 10) / 10) + " ft lines" : null
       ].filter(Boolean).join(" · ") || "—");
-  const bnd = boundsNumbers(shapes);
+  const bnd = stats.bounds;
   setSt("stBounds", !bnd ? "—"
     : (Math.round(bnd.wFt * 10) / 10) + " × " + (Math.round(bnd.hFt * 10) / 10) + " ft");
   const perim = perimNumbers(shapes, bnd);
@@ -782,7 +882,7 @@ function render(){
   const gap = gapNumbers(shapes, bnd, tot);
   setSt("stGap", !gap ? "—"
     : (Math.round(gap.gapSqFt * 10) / 10) + " sq ft open");
-  const edge = edgeNumbers(shapes);
+  const edge = stats.edge;
   setSt("stEdge", !edge ? "—"
     : (Math.round(edge.edgeFt * 10) / 10) + " ft edges");
   const span = spanNumbers(shapes, bnd);
@@ -794,49 +894,49 @@ function render(){
   const diff = diffNumbers(shapes, bnd);
   setSt("stDiff", !diff ? "—"
     : (Math.round(diff.diffFt * 10) / 10) + " ft diff");
-  const avg = avgNumbers(shapes);
+  const avg = stats.avg;
   setSt("stAvg", !avg ? "—"
     : (Math.round(avg.avgSqFt * 10) / 10) + " sq ft avg");
-  const small = smallNumbers(shapes);
+  const small = stats.small;
   setSt("stSmall", !small ? "—"
     : (Math.round(small.smallSqFt * 10) / 10) + " sq ft smallest");
-  const big = bigNumbers(shapes);
+  const big = stats.big;
   setSt("stBig", !big ? "—"
     : (Math.round(big.bigSqFt * 10) / 10) + " sq ft largest");
-  const range = rangeNumbers(shapes);
+  const range = stats.range;
   setSt("stRange", !range ? "—"
     : (Math.round(range.rangeSqFt * 10) / 10) + " sq ft range");
-  const median = medianNumbers(shapes);
+  const median = stats.median;
   setSt("stMedian", !median ? "—"
     : (Math.round(median.medianSqFt * 10) / 10) + " sq ft median");
-  const avgLen = avgLenNumbers(shapes);
+  const avgLen = stats.avgLen;
   setSt("stAvgLen", !avgLen ? "—"
     : (Math.round(avgLen.avgLenFt * 10) / 10) + " ft avg length");
-  const maxLen = maxLenNumbers(shapes);
+  const maxLen = stats.maxLen;
   setSt("stMaxLen", !maxLen ? "—"
     : (Math.round(maxLen.maxLenFt * 10) / 10) + " ft longest");
-  const minLen = minLenNumbers(shapes);
+  const minLen = stats.minLen;
   setSt("stMinLen", !minLen ? "—"
     : (Math.round(minLen.minLenFt * 10) / 10) + " ft shortest");
-  const rangeLen = rangeLenNumbers(shapes);
+  const rangeLen = stats.rangeLen;
   setSt("stRangeLen", !rangeLen ? "—"
     : (Math.round(rangeLen.rangeLenFt * 10) / 10) + " ft range");
-  const medianLen = medianLenNumbers(shapes);
+  const medianLen = stats.medianLen;
   setSt("stMedianLen", !medianLen ? "—"
     : (Math.round(medianLen.medianLenFt * 10) / 10) + " ft median length");
-  const sumLen = sumLenNumbers(shapes);
+  const sumLen = stats.sumLen;
   setSt("stSumLen", !sumLen ? "—"
     : (Math.round(sumLen.sumLenFt * 10) / 10) + " ft total length");
-  const wallLen = wallLenNumbers(shapes);
+  const wallLen = stats.wallLen;
   setSt("stWallLen", !wallLen ? "—"
     : (Math.round(wallLen.wallLenFt * 10) / 10) + " ft walls");
-  const lineLen = lineLenNumbers(shapes);
+  const lineLen = stats.lineLen;
   setSt("stLineLen", !lineLen ? "—"
     : (Math.round(lineLen.lineLenFt * 10) / 10) + " ft lines");
-  const avgWall = avgWallNumbers(shapes);
+  const avgWall = stats.avgWall;
   setSt("stAvgWall", !avgWall ? "—"
     : (Math.round(avgWall.avgWallFt * 10) / 10) + " ft avg wall");
-  const avgLine = avgLineNumbers(shapes);
+  const avgLine = stats.avgLine;
   setSt("stAvgLine", !avgLine ? "—"
     : (Math.round(avgLine.avgLineFt * 10) / 10) + " ft avg line");
   const mid = midNumbers(shapes, bnd);
@@ -848,23 +948,65 @@ function render(){
   const ratio = ratioNumbers(shapes, bnd);
   setSt("stRatio", !ratio ? "—"
     : ratio.ratio.toFixed(2) + " : 1");
-  setSt("stTypes", typesLabel(typesNumbers(shapes)));
+  setSt("stTypes", typesLabel(stats.types));
   setSt("stMeasure", lastMeasure ? fmtFt(lastMeasure.ft) + " (" + lastMeasure.ft.toFixed(2) + " ft)" : (measurePts.length ? "tap the second point" : "tap two points"));
   persistCurrent();
 }
 /* Speed (cycle 53): was a full JSON.stringify + localStorage write on every render
    (every pointermove). Now: skip unchanged payloads, debounce 150ms, flush on pagehide.
    Same LS_CURRENT key and JSON shape — existing saved sketches load unchanged. */
+/* Storage (cycle 64): the autosave gets the same protection the named
+   store got in cycle 56. Every real write first copies the previous VALID
+   current payload to LS_CUR_BACKUP (a corrupt value never overwrites a
+   good backup), and readCurrent() self-heals a corrupt main value from
+   that backup on load. LS_CURRENT key + JSON shape are unchanged, so
+   every existing autosave loads exactly as before. */
+function parseCurrentPayload(raw){
+  if (!raw) return null;
+  try { const v = JSON.parse(raw); if (v && Array.isArray(v.shapes)) return { shapes: v.shapes, scaleFt: v.scaleFt || 1 }; } catch(e){}
+  return null;
+}
+function readCurrent(){
+  let mainRaw = null;
+  try { mainRaw = localStorage.getItem(LS_CURRENT); } catch(e){}
+  const main = parseCurrentPayload(mainRaw);
+  if (main) return main;
+  let bakRaw = null;
+  try { bakRaw = localStorage.getItem(LS_CUR_BACKUP); } catch(e){}
+  const bak = parseCurrentPayload(bakRaw);
+  if (bak){ try { localStorage.setItem(LS_CURRENT, bakRaw); } catch(e){} return bak; }
+  return null;
+}
+function writeCurrent(payload){
+  if (!payload) return;
+  try {
+    const prev = localStorage.getItem(LS_CURRENT);
+    if (prev && prev !== payload && parseCurrentPayload(prev)){ try { localStorage.setItem(LS_CUR_BACKUP, prev); } catch(e){} }
+  } catch(e){}
+  try { localStorage.setItem(LS_CURRENT, payload); } catch(e){}
+}
+function restoreCurrentBackup(){
+  let bakRaw = null;
+  try { bakRaw = localStorage.getItem(LS_CUR_BACKUP); } catch(e){}
+  const bak = parseCurrentPayload(bakRaw);
+  if (!bak) return false;
+  pushHistory();
+  shapes = JSON.parse(JSON.stringify(bak.shapes));
+  scaleFt = bak.scaleFt || 1;
+  document.getElementById("scaleFt").value = scaleFt;
+  uid = shapes.reduce((m, s) => Math.max(m, s.id || 0), 0) + 1;
+  selectedId = null; lastMeasure = null; render(); return true;
+}
 let _persistTimer = 0, _persistPayload = "";
 function persistCurrent(){
   const payload = JSON.stringify({ shapes, scaleFt });
   if (payload === _persistPayload) return;
   _persistPayload = payload;
   clearTimeout(_persistTimer);
-  _persistTimer = setTimeout(() => { try { localStorage.setItem(LS_CURRENT, _persistPayload); } catch(e){} }, 150);
+  _persistTimer = setTimeout(() => writeCurrent(_persistPayload), 150);
 }
 window.addEventListener("pagehide", () => {
-  if (_persistPayload){ try { localStorage.setItem(LS_CURRENT, _persistPayload); } catch(e){} }
+  if (_persistPayload) writeCurrent(_persistPayload);
 });
 
 /* ================= Pointer handling ================= */
@@ -1049,6 +1191,31 @@ function duplicateSelected(){
   shapes.push(c); selectedId = c.id; render(); return c;
 }
 document.getElementById("btnDup").addEventListener("click", duplicateSelected);
+function arraySelected(count, dir){
+  const s = shapes.find(x => x.id === selectedId); if (!s) return null;
+  let n = Math.floor(Number(count)); if (!(n >= 1)) return null;
+  if (n > 20) n = 20; // a runaway array helps nobody — cap the row at 20 copies
+  const d = dir === "down" ? "down" : "row";
+  const b = bounds(s);
+  const stepX = d === "row" ? b.w + GRID : 0, stepY = d === "down" ? b.h + GRID : 0;
+  pushHistory(); // the whole array is ONE undo step, not one per copy
+  const made = [];
+  for (let i = 1; i <= n; i++){
+    const c = JSON.parse(JSON.stringify(s)); c.id = uid++;
+    moveShape(c, stepX * i, stepY * i);
+    shapes.push(c); made.push(c);
+  }
+  selectedId = made[made.length - 1].id; render(); return made;
+}
+function arrayPrompt(){
+  const s = shapes.find(x => x.id === selectedId); if (!s) return;
+  const v = prompt("Extra copies in a row to the right (1-20), one square apart:", "3");
+  if (v === null) return;
+  const n = parseInt(v, 10);
+  if (!(n > 0)) return;
+  arraySelected(n, "row");
+}
+document.getElementById("btnArraySel").addEventListener("click", arrayPrompt);
 function rotateSelected(){
   const s = shapes.find(x => x.id === selectedId); if (!s) return null;
   if (s.type === "text") return null; // text labels stay readable, not rotated
@@ -1381,6 +1548,7 @@ document.addEventListener("keydown", e => {
   if (!e.ctrlKey && !e.metaKey && (e.key === "+" || e.key === "=") && selectedId != null){ resizeSelected(GRID); }
   if (!e.ctrlKey && !e.metaKey && (e.key === "-" || e.key === "_") && selectedId != null){ resizeSelected(-GRID); }
   if (!e.ctrlKey && !e.metaKey && e.key.toLowerCase() === "s" && selectedId != null){ snapSelected(); }
+  if (!e.ctrlKey && !e.metaKey && e.key.toLowerCase() === "a" && selectedId != null){ arrayPrompt(); }
   if (!e.ctrlKey && !e.metaKey && e.key.toLowerCase() === "q" && selectedId != null){ squareSelected(); }
   if (!e.ctrlKey && !e.metaKey && e.key.toLowerCase() === "c" && selectedId != null){ centerSelected(); }
   if (!e.ctrlKey && !e.metaKey && e.key.toLowerCase() === "f" && selectedId != null){ bringToFrontSelected(); }
@@ -1444,8 +1612,8 @@ function storageInfo(){
   const st = getStore();
   const names = Object.keys(st);
   const bytes = k => { try { return (localStorage.getItem(k) || "").length; } catch(e){ return 0; } };
-  const storeBytes = bytes(LS_SKETCHES), currentBytes = bytes(LS_CURRENT), backupBytes = bytes(LS_BACKUP);
-  return { sketches: names.length, names, currentShapes: shapes.length, storeBytes, currentBytes, backupBytes, totalBytes: storeBytes + currentBytes + backupBytes, backupAvailable: backupBytes > 2 };
+  const storeBytes = bytes(LS_SKETCHES), currentBytes = bytes(LS_CURRENT), backupBytes = bytes(LS_BACKUP), currentBackupBytes = bytes(LS_CUR_BACKUP);
+  return { sketches: names.length, names, currentShapes: shapes.length, storeBytes, currentBytes, backupBytes, currentBackupBytes, currentBackupAvailable: currentBackupBytes > 2, totalBytes: storeBytes + currentBytes + backupBytes + currentBackupBytes, backupAvailable: backupBytes > 2 };
 }
 function saveSketch(name){
   if (!name) return false;
@@ -1466,7 +1634,7 @@ function loadSketch(name){
 function refreshSketchList(){
   const st = getStore(), names = Object.keys(st);
   const si = document.getElementById("storageInfo");
-  if (si){ const info = storageInfo(); si.textContent = "💾 Storage: " + info.sketches + (info.sketches === 1 ? " sketch" : " sketches") + " · " + Math.max(1, Math.round(info.totalBytes / 102.4) / 10) + " KB used" + (info.backupAvailable ? " · backup ready" : " · no backup yet"); }
+  if (si){ const info = storageInfo(); si.textContent = "💾 Storage: " + info.sketches + (info.sketches === 1 ? " sketch" : " sketches") + " · " + Math.max(1, Math.round(info.totalBytes / 102.4) / 10) + " KB used" + ((info.backupAvailable || info.currentBackupAvailable) ? " · backup ready" : " · no backup yet"); }
   const box = document.getElementById("sketchList");
   if (!names.length){ box.innerHTML = '<p class="small" style="margin:8px 0 2px">No saved sketches yet.</p>'; return; }
   box.innerHTML = "";
@@ -1531,10 +1699,8 @@ function fitCanvas(){
 window.addEventListener("resize", fitCanvas);
 (function init(){
   document.getElementById("verPill").textContent = "v" + APP_VERSION;
-  try {
-    const cur = JSON.parse(localStorage.getItem(LS_CURRENT) || "null");
-    if (cur && Array.isArray(cur.shapes)){ shapes = cur.shapes; scaleFt = cur.scaleFt || 1; document.getElementById("scaleFt").value = scaleFt; uid = shapes.reduce((m, s) => Math.max(m, s.id || 0), 0) + 1; }
-  } catch(e){}
+  const cur = readCurrent();
+  if (cur){ shapes = cur.shapes; scaleFt = cur.scaleFt || 1; document.getElementById("scaleFt").value = scaleFt; uid = shapes.reduce((m, s) => Math.max(m, s.id || 0), 0) + 1; }
   refreshSketchList(); syncUndoBtns(); fitCanvas(); render();
 })();
 
@@ -1550,8 +1716,8 @@ window.CADSketch = {
   addLine(x1, y1, x2, y2, type){ pushHistory(); const s = { id: uid++, type: type || "line", x1, y1, x2, y2 }; shapes.push(s); render(); return s; },
   addCircle(cx, cy, r){ pushHistory(); const s = { id: uid++, type: "circle", cx, cy, r }; shapes.push(s); render(); return s; },
   addText(x, y, text){ pushHistory(); const s = { id: uid++, type: "text", x, y, text }; shapes.push(s); render(); return s; },
-  dimNumbers, dimLabel, areaNumbers, areaSelected, angleNumbers, angleSelected, totalsNumbers, totalsSketch, boundsNumbers, boundsSketch, midNumbers, midSketch, diagNumbers, diagSketch, ratioNumbers, ratioSketch, perimNumbers, perimSketch, coverNumbers, coverSketch, fillNumbers, fillSketch, gapNumbers, gapSketch, edgeNumbers, edgeSketch, spanNumbers, spanSketch, shortNumbers, shortSketch, diffNumbers, diffSketch, avgNumbers, avgSketch, smallNumbers, smallSketch, bigNumbers, bigSketch, rangeNumbers, rangeSketch, medianNumbers, medianSketch, avgLenNumbers, avgLenSketch, maxLenNumbers, maxLenSketch, minLenNumbers, minLenSketch, rangeLenNumbers, rangeLenSketch, medianLenNumbers, medianLenSketch, sumLenNumbers, sumLenSketch, wallLenNumbers, wallLenSketch, lineLenNumbers, lineLenSketch, avgWallNumbers, avgWallSketch, avgLineNumbers, avgLineSketch, typesNumbers, typesSketch, pxToFt, fmtFt,
-  shapeSnapPoints, collectSnapPoints, findObjectSnap, snapPointSmart, moveSnapCorrection, getSnapMarker(){ return snapMarker; }, snapDist: SNAP_DIST, saveSketch, loadSketch, storageInfo, duplicateSelected, rotateSelected, rotateSelectedCCW, nudgeSelected, resizeSelected, squareSelected, snapSelected, centerSelected, resetView, fitView, focusSelected, keepSelectedOnly, bringToFrontSelected, sendToBackSelected, bringForwardSelected, sendBackwardSelected, originSelected, setSizeSelected, flipSelected, flipHSelected, flipVSelected, selectNext, setPositionSelected, setTextSelected,
+  dimNumbers, dimLabel, areaNumbers, areaSelected, angleNumbers, angleSelected, totalsNumbers, totalsSketch, boundsNumbers, boundsSketch, midNumbers, midSketch, diagNumbers, diagSketch, ratioNumbers, ratioSketch, perimNumbers, perimSketch, coverNumbers, coverSketch, fillNumbers, fillSketch, gapNumbers, gapSketch, edgeNumbers, edgeSketch, spanNumbers, spanSketch, shortNumbers, shortSketch, diffNumbers, diffSketch, avgNumbers, avgSketch, smallNumbers, smallSketch, bigNumbers, bigSketch, rangeNumbers, rangeSketch, medianNumbers, medianSketch, avgLenNumbers, avgLenSketch, maxLenNumbers, maxLenSketch, minLenNumbers, minLenSketch, rangeLenNumbers, rangeLenSketch, medianLenNumbers, medianLenSketch, sumLenNumbers, sumLenSketch, wallLenNumbers, wallLenSketch, lineLenNumbers, lineLenSketch, avgWallNumbers, avgWallSketch, avgLineNumbers, avgLineSketch, typesNumbers, typesSketch, sketchStats, pxToFt, fmtFt,
+  shapeSnapPoints, collectSnapPoints, findObjectSnap, snapPointSmart, moveSnapCorrection, getSnapMarker(){ return snapMarker; }, snapDist: SNAP_DIST, saveSketch, loadSketch, storageInfo, restoreCurrentBackup, duplicateSelected, arraySelected, rotateSelected, rotateSelectedCCW, nudgeSelected, resizeSelected, squareSelected, snapSelected, centerSelected, resetView, fitView, focusSelected, keepSelectedOnly, bringToFrontSelected, sendToBackSelected, bringForwardSelected, sendBackwardSelected, originSelected, setSizeSelected, flipSelected, flipHSelected, flipVSelected, selectNext, setPositionSelected, setTextSelected,
   measure(a, b){ const ft = pxToFt(Math.hypot(b.x - a.x, b.y - a.y)); lastMeasure = { ft, pts: [a, b] }; render(); return ft; },
   clear(){ shapes = []; selectedId = null; lastMeasure = null; render(); }
 };
