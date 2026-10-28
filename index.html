@@ -150,7 +150,7 @@ header{box-shadow:0 2px 18px rgba(255,122,26,.16)}
 <header>
   <div class="logo">📐</div>
   <div>
-    <h1>📐 CADN8 <span id="verPill" style="font-size:10px;color:#0b1512;background:var(--gold);border-radius:999px;padding:2px 7px;vertical-align:middle;letter-spacing:.03em">v1.0.72</span></h1>
+    <h1>📐 CADN8 <span id="verPill" style="font-size:10px;color:#0b1512;background:var(--gold);border-radius:999px;padding:2px 7px;vertical-align:middle;letter-spacing:.03em">v1.0.73</span></h1>
     <p>Quick job-site sketches — rooms, decks, mounting walls</p>
   </div>
 </header>
@@ -286,7 +286,7 @@ header{box-shadow:0 2px 18px rgba(255,122,26,.16)}
 "use strict";
 /* ================= State ================= */
 const APP_NAME = "CADN8";
-const APP_VERSION = "1.0.72";          // bump patch each upgrade-loop cycle
+const APP_VERSION = "1.0.74";          // bump patch each upgrade-loop cycle
 const GRID = 40;                       // px per grid square
 let shapes = [];                       // drawing objects, world px coords
 let selectedId = null;
@@ -788,6 +788,28 @@ function labelPos(s){
 }
 
 /* ================= Rendering ================= */
+/* Effects (cycle 73): marching-ants selected outline. A single 90ms timer
+   advances selDashOffset by 2 (dash pattern is 5+5, so it wraps at 10) and
+   re-renders ONLY while a non-text shape is selected and the user has not
+   asked for reduced motion — no timer, and no extra redraws, otherwise. */
+let selDashOffset = 0, selAnimTimer = null;
+function selAnimWanted(){
+  if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return false;
+  const s = shapes.find(x => x.id === selectedId);
+  return !!(s && s.type !== "text");
+}
+function syncSelAnim(){
+  const want = selAnimWanted();
+  if (want && !selAnimTimer){
+    selAnimTimer = setInterval(() => {
+      if (!selAnimWanted()){ syncSelAnim(); return; }
+      selDashOffset = (selDashOffset + 2) % 10;
+      render();
+    }, 90);
+  } else if (!want && selAnimTimer){
+    clearInterval(selAnimTimer); selAnimTimer = null; selDashOffset = 0;
+  }
+}
 const _lblW = new Map();  // Speed (cycle 53): dimension-label width cache (see drawShape)
 function drawShape(c, s, selected){
   c.save();
@@ -827,7 +849,10 @@ function drawShape(c, s, selected){
     // Effects (cycle 55): fake-glow halo — a wide translucent gold stroke under the dashed
     // bounds. (Real shadowBlur was tried first and measurably slowed redraws, so it was dropped.)
     c.save(); c.strokeStyle = "rgba(251,191,36,.28)"; c.lineWidth = 7; c.strokeRect(b.x - 6, b.y - 6, b.w + 12, b.h + 12); c.restore();
-    c.save(); c.strokeStyle = "#fbbf24"; c.setLineDash([5,5]); c.lineWidth = 1.5;
+    // Effects (cycle 73): marching-ants — the dashed outline uses the animated
+    // selDashOffset (advanced by syncSelAnim's timer while a non-text shape is
+    // selected). Static offset 0 under prefers-reduced-motion / no selection.
+    c.save(); c.strokeStyle = "#fbbf24"; c.setLineDash([5,5]); c.lineDashOffset = -selDashOffset; c.lineWidth = 1.5;
     c.strokeRect(b.x - 6, b.y - 6, b.w + 12, b.h + 12); c.restore();
   }
 }
@@ -983,6 +1008,7 @@ function render(){
     : ratio.ratio.toFixed(2) + " : 1");
   setSt("stTypes", typesLabel(stats.types));
   setSt("stMeasure", lastMeasure ? fmtFt(lastMeasure.ft) + " (" + lastMeasure.ft.toFixed(2) + " ft)" : (measurePts.length ? "tap the second point" : "tap two points"));
+  syncSelAnim();
   persistCurrent();
 }
 /* Speed (cycle 53): was a full JSON.stringify + localStorage write on every render
@@ -1703,6 +1729,24 @@ function loadSketch(name){
   uid = shapes.reduce((m, s) => Math.max(m, s.id || 0), 0) + 1;
   selectedId = null; lastMeasure = null; render(); return true;
 }
+/* Storage (cycle 74): rename a saved sketch in place. Until now fixing a
+   typo'd name meant load -> save under the new name -> trash the old one,
+   which also reset savedAt. renameSketch() moves the stored entry under
+   the new (trimmed) key, preserving shapes, scaleFt and savedAt exactly,
+   writes through setStore() so the cycle-56 backup rotation still protects
+   the rename, and refuses (false, no change) when the old name is missing,
+   the new name is empty/unchanged, or the new name already exists — it
+   never overwrites a live sketch. LS_SKETCHES key + entry shape are
+   unchanged, so every existing save loads exactly as before. */
+function renameSketch(oldName, newName){
+  const o = String(oldName == null ? "" : oldName).trim();
+  const n = String(newName == null ? "" : newName).trim();
+  if (!o || !n || o === n) return false;
+  const st = getStore(); if (!st[o] || st[n]) return false;
+  st[n] = st[o]; delete st[o];
+  if (!setStore(st)) return false;
+  refreshSketchList(); return true;
+}
 /* Storage (cycle 69): deleted named sketches go to a Trash store instead
    of vanishing. getTrash/setTrash mirror the named store's defensive shape
    checks; deleteSketch() stamps deletedAt and keeps only the 10 most
@@ -1756,10 +1800,13 @@ function refreshSketchList(){
     const span = document.createElement("span"); span.className = "nm"; span.textContent = nm;
     const bLoad = document.createElement("button"); bLoad.className = "act"; bLoad.textContent = "📂 Load";
     bLoad.addEventListener("click", () => loadSketch(nm));
+    const bRen = document.createElement("button"); bRen.className = "act"; bRen.textContent = "✏️";
+    bRen.title = "Rename sketch";
+    bRen.addEventListener("click", () => { const v = prompt("Rename sketch:", nm); if (v === null) return; if (!renameSketch(nm, v)) alert("That name is empty or already in use — the sketch was not renamed."); });
     const bDel = document.createElement("button"); bDel.className = "act danger"; bDel.textContent = "🗑️";
     bDel.title = "Move to trash (restorable)";
     bDel.addEventListener("click", () => deleteSketch(nm));
-    row.append(span, bLoad, bDel); box.appendChild(row);
+    row.append(span, bLoad, bRen, bDel); box.appendChild(row);
   }
   const trashNames = Object.keys(getTrash());
   if (trashNames.length){
@@ -1847,7 +1894,7 @@ window.CADSketch = {
   addCircle(cx, cy, r){ pushHistory(); const s = { id: uid++, type: "circle", cx, cy, r }; shapes.push(s); render(); return s; },
   addText(x, y, text){ pushHistory(); const s = { id: uid++, type: "text", x, y, text }; shapes.push(s); render(); return s; },
   dimNumbers, dimLabel, areaNumbers, areaSelected, angleNumbers, angleSelected, totalsNumbers, totalsSketch, boundsNumbers, boundsSketch, midNumbers, midSketch, diagNumbers, diagSketch, ratioNumbers, ratioSketch, perimNumbers, perimSketch, coverNumbers, coverSketch, fillNumbers, fillSketch, gapNumbers, gapSketch, edgeNumbers, edgeSketch, spanNumbers, spanSketch, shortNumbers, shortSketch, diffNumbers, diffSketch, avgNumbers, avgSketch, smallNumbers, smallSketch, bigNumbers, bigSketch, rangeNumbers, rangeSketch, medianNumbers, medianSketch, avgLenNumbers, avgLenSketch, maxLenNumbers, maxLenSketch, minLenNumbers, minLenSketch, rangeLenNumbers, rangeLenSketch, medianLenNumbers, medianLenSketch, sumLenNumbers, sumLenSketch, wallLenNumbers, wallLenSketch, lineLenNumbers, lineLenSketch, avgWallNumbers, avgWallSketch, avgLineNumbers, avgLineSketch, typesNumbers, typesSketch, sketchStats, pxToFt, fmtFt,
-  shapeSnapPoints, collectSnapPoints, findObjectSnap, snapPointSmart, moveSnapCorrection, getSnapMarker(){ return snapMarker; }, snapDist: SNAP_DIST, saveSketch, loadSketch, storageInfo, restoreCurrentBackup, deleteSketch, restoreDeleted, emptyTrash, duplicateSelected, arraySelected, rotateSelected, rotateSelectedCCW, straightenSelected, nudgeSelected, resizeSelected, squareSelected, snapSelected, centerSelected, resetView, fitView, focusSelected, keepSelectedOnly, bringToFrontSelected, sendToBackSelected, bringForwardSelected, sendBackwardSelected, originSelected, setSizeSelected, flipSelected, flipHSelected, flipVSelected, selectNext, setPositionSelected, setTextSelected,
+  shapeSnapPoints, collectSnapPoints, findObjectSnap, snapPointSmart, moveSnapCorrection, getSnapMarker(){ return snapMarker; }, snapDist: SNAP_DIST, saveSketch, loadSketch, renameSketch, storageInfo, restoreCurrentBackup, deleteSketch, restoreDeleted, emptyTrash, duplicateSelected, arraySelected, rotateSelected, rotateSelectedCCW, straightenSelected, nudgeSelected, resizeSelected, squareSelected, snapSelected, centerSelected, resetView, fitView, focusSelected, keepSelectedOnly, bringToFrontSelected, sendToBackSelected, bringForwardSelected, sendBackwardSelected, originSelected, setSizeSelected, flipSelected, flipHSelected, flipVSelected, selectNext, setPositionSelected, setTextSelected,
   measure(a, b){ const ft = pxToFt(Math.hypot(b.x - a.x, b.y - a.y)); lastMeasure = { ft, pts: [a, b] }; render(); return ft; },
   clear(){ shapes = []; selectedId = null; lastMeasure = null; render(); }
 };
