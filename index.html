@@ -113,13 +113,44 @@ header{box-shadow:0 2px 18px rgba(255,122,26,.16)}
 #exportBar{animation-delay:.18s}
 @keyframes cadFadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 .sketch-row:hover{border-color:var(--gold);transform:translateY(-1px)}
+/* ---- UI polish (cycle 67): tidy Save + Export bars (phone + desktop) ---- */
+/* CSS only, no JS/API change. Before: phone Save was a 64px button squeezed beside the name input and export buttons were unequal (104/110px); on desktop the 3 export buttons sat left-aligned at ~110px in a 1252px bar with empty trailing space and Save was again only 64px. Now both bars use the actBar grid pattern: equal-width, full-height (40px) tap targets that fill their bar. Approved stage layouts (cycle 37 phone rail, cycle 46 desktop grid areas) are untouched. */
+@media (max-width:640px){
+  #saveBar .row{display:grid;grid-template-columns:1fr;gap:6px}
+  #saveBar #sketchName{width:100%;min-width:0;min-height:40px}
+  #saveBar #btnSave{width:100%;min-height:40px}
+  #exportBar .row{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  #exportBar button.act{width:100%;min-height:40px}
+  #exportBar #btnImport{grid-column:1/-1}
+}
+@media (min-width:1024px){
+  #saveBar .row{display:grid;grid-template-columns:minmax(0,1fr) 180px;gap:6px}
+  #saveBar #sketchName{min-width:0;min-height:40px}
+  #saveBar #btnSave{width:100%;min-height:40px}
+  #exportBar .row{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+  #exportBar button.act{width:100%;min-height:40px}
+}
+/* ---- Effects (cycle 68): version-pill + Save glow pulse + status-pill hover lift, reduced-motion safe ---- */
+/* CSS-only: no JS, no canvas redraw cost. The cycle-55 global reduced-motion rule already kills these animations/transitions. */
+#verPill{animation:cadPillGlow 2.8s ease-in-out infinite alternate}
+@keyframes cadPillGlow{from{box-shadow:0 0 0 rgba(251,191,36,0)}to{box-shadow:0 0 12px rgba(251,191,36,.65)}}
+#btnSave{animation:cadSaveGlow 2.6s ease-in-out infinite alternate}
+@keyframes cadSaveGlow{from{box-shadow:0 0 0 rgba(45,212,191,0)}to{box-shadow:0 0 14px rgba(45,212,191,.55)}}
+#status .pill:hover{border-color:var(--gold);transform:translateY(-1px)}
+/* ---- UI polish (cycle 72): tidy desktop util bar ---- */
+/* CSS only, no JS/API change. Before (measured at 1280px): the util bar spanned 846px but Undo/Redo were small 67/66px x 36px buttons clustered at the left, ending at x=556 and leaving ~290px of empty trailing space, while every other desktop bar uses 40px targets. Now at >=1024px the view toggles + scale stay grouped at the left and Undo/Redo sit at the right edge as equal 112px x 40px targets, matching the actBar/save/export standard. Phone (cycle 59 two-row util layout) and tablet widths are unchanged; the approved stage layouts (cycle 37 phone rail, cycle 46 desktop grid areas) are untouched. */
+@media (min-width:1024px){
+  #utilBar .row{flex-wrap:nowrap}
+  #utilBar #btnUndo{margin-left:auto}
+  #utilBar #btnUndo,#utilBar #btnRedo{flex:0 0 112px;min-width:112px;min-height:40px}
+}
 </style>
 </head>
 <body>
 <header>
   <div class="logo">📐</div>
   <div>
-    <h1>📐 CADN8 <span id="verPill" style="font-size:10px;color:#0b1512;background:var(--gold);border-radius:999px;padding:2px 7px;vertical-align:middle;letter-spacing:.03em">v1.0.65</span></h1>
+    <h1>📐 CADN8 <span id="verPill" style="font-size:10px;color:#0b1512;background:var(--gold);border-radius:999px;padding:2px 7px;vertical-align:middle;letter-spacing:.03em">v1.0.72</span></h1>
     <p>Quick job-site sketches — rooms, decks, mounting walls</p>
   </div>
 </header>
@@ -198,6 +229,7 @@ header{box-shadow:0 2px 18px rgba(255,122,26,.16)}
       <button class="act" id="btnArraySel" title="Array the selected shape: step out extra copies in a row to the right, one square apart, in one Undo step (A key)">⧉→ Array</button>
       <button class="act" id="btnRotate" title="Rotate the selected shape 90 degrees around its center">↻ Rotate 90°</button>
       <button class="act" id="btnRotateCCW" title="Rotate the selected shape 90 degrees counter-clockwise around its center (Shift+R key)">↺ Rotate −90°</button>
+      <button class="act" id="btnStraightenSel" title="Straighten the selected line or wall to level (horizontal) or plumb (vertical), whichever is nearer — keeps its length and center (G key)">📏 Straighten</button>
       <button class="act" id="btnGrow" title="Grow the selected shape by one square around its center (+ key)">⤢ Grow</button>
       <button class="act" id="btnShrink" title="Shrink the selected shape by one square around its center (− key)">⤡ Shrink</button>
       <button class="act" id="btnSquareSel" title="Make the selected rectangle square — both sides become its longest side, around its center (Q key)">⬜ Square</button>
@@ -254,7 +286,7 @@ header{box-shadow:0 2px 18px rgba(255,122,26,.16)}
 "use strict";
 /* ================= State ================= */
 const APP_NAME = "CADN8";
-const APP_VERSION = "1.0.65";          // bump patch each upgrade-loop cycle
+const APP_VERSION = "1.0.72";          // bump patch each upgrade-loop cycle
 const GRID = 40;                       // px per grid square
 let shapes = [];                       // drawing objects, world px coords
 let selectedId = null;
@@ -277,6 +309,7 @@ const LS_SKETCHES = "cadsketch_sketches_v1";
 const LS_CURRENT  = "cadsketch_current_v1";
 const LS_BACKUP   = "cadsketch_sketches_backup_v1"; // cycle 56: previous good named-store copy
 const LS_CUR_BACKUP = "cadsketch_current_backup_v1"; // cycle 64: previous good autosave (current sketch) copy
+const LS_TRASH    = "cadsketch_trash_v1";    // cycle 69: recently deleted named sketches (restore window)
 
 /* ================= Units ================= */
 const pxToFt = px => px / GRID * scaleFt;
@@ -997,16 +1030,29 @@ function restoreCurrentBackup(){
   uid = shapes.reduce((m, s) => Math.max(m, s.id || 0), 0) + 1;
   selectedId = null; lastMeasure = null; render(); return true;
 }
+/* Speed (cycle 66): cycle 53 debounced the localStorage write but still ran a
+   full JSON.stringify of the whole sketch on EVERY render (every pointermove
+   during a drag) just to compare payloads. Now persistCurrent() only queues a
+   flush: flushPersist() stringifies the live sketch once when the 150ms timer
+   fires (so a burst of renders costs zero stringifies, and the flush always
+   captures the newest state), skips the write when the payload is unchanged,
+   and pagehide flushes synchronously so a fast close/reload loses nothing.
+   Same LS_CURRENT key, same JSON shape, same writeCurrent() backup rotation. */
 let _persistTimer = 0, _persistPayload = "";
-function persistCurrent(){
+function flushPersist(){
+  _persistTimer = 0;
   const payload = JSON.stringify({ shapes, scaleFt });
   if (payload === _persistPayload) return;
   _persistPayload = payload;
-  clearTimeout(_persistTimer);
-  _persistTimer = setTimeout(() => writeCurrent(_persistPayload), 150);
+  writeCurrent(payload);
+}
+function persistCurrent(){
+  if (_persistTimer) return; // a flush is already queued and reads the live sketch when it fires
+  _persistTimer = setTimeout(flushPersist, 150);
 }
 window.addEventListener("pagehide", () => {
-  if (_persistPayload) writeCurrent(_persistPayload);
+  if (_persistTimer){ clearTimeout(_persistTimer); _persistTimer = 0; }
+  flushPersist();
 });
 
 /* ================= Pointer handling ================= */
@@ -1041,13 +1087,20 @@ function collectSnapPoints(excludeId){
   }
   return out;
 }
+/* Speed (cycle 71): the snap search runs on every pointermove during drags,
+   over every snap point of every other shape. Compare SQUARED distances in
+   the inner loops (no Math.hypot per candidate — hypot is the slow path);
+   squared order is the same order, the <= tie rule is unchanged, snapped
+   coordinates are copied verbatim from the winning target, and the one
+   returned dist is sqrt'd once at the end. Same results, less hot-path cost. */
 function findObjectSnap(p, excludeId){
   if (!snapOn) return null;
-  let best = null, bestD = SNAP_DIST;
+  let best = null, bestD2 = SNAP_DIST * SNAP_DIST;
   for (const t of collectSnapPoints(excludeId)){
-    const d = Math.hypot(p.x - t.x, p.y - t.y);
-    if (d <= bestD){ bestD = d; best = { x: t.x, y: t.y, dist: d }; }
+    const ux = p.x - t.x, uy = p.y - t.y, d2 = ux * ux + uy * uy;
+    if (d2 <= bestD2){ bestD2 = d2; best = { x: t.x, y: t.y, dist: 0 }; }
   }
+  if (best) best.dist = Math.hypot(p.x - best.x, p.y - best.y); // one hypot per call, on the winner only — returned dist stays bit-identical to the old per-candidate hypot
   return best;
 }
 function snapPt(p){
@@ -1063,12 +1116,12 @@ function snapPointSmart(p, excludeId){
 function moveSnapCorrection(orig, dxRaw, dyRaw, excludeId){
   if (!snapOn) return { dx: 0, dy: 0, marker: null };
   const targets = collectSnapPoints(excludeId);
-  let bestD = SNAP_DIST, bestCorr = null, bestTarget = null;
+  let bestD2 = SNAP_DIST * SNAP_DIST, bestCorr = null, bestTarget = null;
   for (const a of shapeSnapPoints(orig)){
     const px = a.x + dxRaw, py = a.y + dyRaw;
     for (const t of targets){
-      const d = Math.hypot(px - t.x, py - t.y);
-      if (d <= bestD){ bestD = d; bestCorr = { dx: t.x - px, dy: t.y - py }; bestTarget = { x: t.x, y: t.y }; }
+      const ux = px - t.x, uy = py - t.y, d2 = ux * ux + uy * uy; // Speed (cycle 71): squared distance, see findObjectSnap
+      if (d2 <= bestD2){ bestD2 = d2; bestCorr = { dx: t.x - px, dy: t.y - py }; bestTarget = { x: t.x, y: t.y }; }
     }
   }
   if (bestCorr) return { dx: bestCorr.dx, dy: bestCorr.dy, marker: bestTarget };
@@ -1135,7 +1188,7 @@ cv.addEventListener("pointermove", e => {
       const corr = moveSnapCorrection(drag.orig, dxRaw, dyRaw, drag.id);
       snapMarker = corr.marker;
       const dx = dxRaw + corr.dx, dy = dyRaw + corr.dy;
-      Object.assign(s, JSON.parse(JSON.stringify(drag.orig)));
+      Object.assign(s, drag.orig); // Speed (cycle 71): shapes are flat objects of primitives, so a shallow copy restores the drag-start state exactly — was a JSON stringify+parse of the shape on every pointermove
       if (dx || dy) moveShape(s, dx, dy);
       if (dx || dy) drag.moved = true;
       render();
@@ -1250,6 +1303,23 @@ function rotateSelectedCCW(){
   render(); return s;
 }
 document.getElementById("btnRotateCCW").addEventListener("click", rotateSelectedCCW);
+function straightenSelected(mode){
+  const s = shapes.find(x => x.id === selectedId); if (!s) return null;
+  if (s.type === "rect" || s.type === "circle") return s; // already axis-aligned — nothing to straighten
+  if (s.type !== "line" && s.type !== "wall") return null; // text labels have no direction to straighten
+  const len = segLen(s); if (!len) return null;
+  const mx = (s.x1 + s.x2) / 2, my = (s.y1 + s.y2) / 2;
+  const dx = Math.abs(s.x2 - s.x1), dy = Math.abs(s.y2 - s.y1);
+  const m = (mode === "h" || mode === "v") ? mode : (dx >= dy ? "h" : "v"); // auto: nearest axis
+  let nx1, ny1, nx2, ny2;
+  if (m === "h"){ nx1 = mx - len / 2; nx2 = mx + len / 2; ny1 = my; ny2 = my; }
+  else { nx1 = mx; nx2 = mx; ny1 = my - len / 2; ny2 = my + len / 2; }
+  if (nx1 === s.x1 && ny1 === s.y1 && nx2 === s.x2 && ny2 === s.y2) return s; // already straight that way — no history entry needed
+  pushHistory();
+  s.x1 = nx1; s.y1 = ny1; s.x2 = nx2; s.y2 = ny2;
+  render(); return s;
+}
+document.getElementById("btnStraightenSel").addEventListener("click", () => straightenSelected());
 function resizeSelected(delta){
   const s = shapes.find(x => x.id === selectedId); if (!s) return null;
   if (s.type === "text" || !delta) return null; // text labels keep their readable size
@@ -1550,6 +1620,7 @@ document.addEventListener("keydown", e => {
   if (!e.ctrlKey && !e.metaKey && e.key.toLowerCase() === "s" && selectedId != null){ snapSelected(); }
   if (!e.ctrlKey && !e.metaKey && e.key.toLowerCase() === "a" && selectedId != null){ arrayPrompt(); }
   if (!e.ctrlKey && !e.metaKey && e.key.toLowerCase() === "q" && selectedId != null){ squareSelected(); }
+  if (!e.ctrlKey && !e.metaKey && e.key.toLowerCase() === "g" && selectedId != null){ straightenSelected(); }
   if (!e.ctrlKey && !e.metaKey && e.key.toLowerCase() === "c" && selectedId != null){ centerSelected(); }
   if (!e.ctrlKey && !e.metaKey && e.key.toLowerCase() === "f" && selectedId != null){ bringToFrontSelected(); }
   if (!e.ctrlKey && !e.metaKey && e.key.toLowerCase() === "b" && selectedId != null){ sendToBackSelected(); }
@@ -1612,8 +1683,9 @@ function storageInfo(){
   const st = getStore();
   const names = Object.keys(st);
   const bytes = k => { try { return (localStorage.getItem(k) || "").length; } catch(e){ return 0; } };
-  const storeBytes = bytes(LS_SKETCHES), currentBytes = bytes(LS_CURRENT), backupBytes = bytes(LS_BACKUP), currentBackupBytes = bytes(LS_CUR_BACKUP);
-  return { sketches: names.length, names, currentShapes: shapes.length, storeBytes, currentBytes, backupBytes, currentBackupBytes, currentBackupAvailable: currentBackupBytes > 2, totalBytes: storeBytes + currentBytes + backupBytes + currentBackupBytes, backupAvailable: backupBytes > 2 };
+  const storeBytes = bytes(LS_SKETCHES), currentBytes = bytes(LS_CURRENT), backupBytes = bytes(LS_BACKUP), currentBackupBytes = bytes(LS_CUR_BACKUP), trashBytes = bytes(LS_TRASH);
+  const trashNames = Object.keys(getTrash());
+  return { sketches: names.length, names, currentShapes: shapes.length, storeBytes, currentBytes, backupBytes, currentBackupBytes, currentBackupAvailable: currentBackupBytes > 2, trashCount: trashNames.length, trashNames, trashBytes, totalBytes: storeBytes + currentBytes + backupBytes + currentBackupBytes + trashBytes, backupAvailable: backupBytes > 2 };
 }
 function saveSketch(name){
   if (!name) return false;
@@ -1631,21 +1703,79 @@ function loadSketch(name){
   uid = shapes.reduce((m, s) => Math.max(m, s.id || 0), 0) + 1;
   selectedId = null; lastMeasure = null; render(); return true;
 }
+/* Storage (cycle 69): deleted named sketches go to a Trash store instead
+   of vanishing. getTrash/setTrash mirror the named store's defensive shape
+   checks; deleteSketch() stamps deletedAt and keeps only the 10 most
+   recent; restoreDeleted() refuses to overwrite a live sketch with the
+   same name; emptyTrash() is the only permanent erase. LS_SKETCHES,
+   LS_CURRENT and both backup keys/shapes are untouched, and a missing
+   LS_TRASH reads as empty — every existing save loads exactly as before. */
+function getTrash(){
+  try {
+    const v = JSON.parse(localStorage.getItem(LS_TRASH) || "{}");
+    if (v && typeof v === "object" && !Array.isArray(v)) return v;
+  } catch(e){}
+  return {};
+}
+function setTrash(o){
+  try { localStorage.setItem(LS_TRASH, JSON.stringify(o)); return true; } catch(e){ return false; }
+}
+function deleteSketch(name){
+  const st = getStore(); if (!st[name]) return false;
+  const tr = getTrash();
+  tr[name] = { shapes: st[name].shapes || [], scaleFt: st[name].scaleFt || 1, savedAt: st[name].savedAt || null, deletedAt: new Date().toISOString() };
+  const names = Object.keys(tr).sort((a, b) => String(tr[a].deletedAt || "").localeCompare(String(tr[b].deletedAt || "")));
+  while (names.length > 10) delete tr[names.shift()];
+  setTrash(tr);
+  delete st[name];
+  if (!setStore(st)) return false;
+  refreshSketchList(); return true;
+}
+function restoreDeleted(name){
+  const tr = getTrash(); if (!tr[name]) return false;
+  const st = getStore(); if (st[name]) return false; // never overwrite a live sketch
+  st[name] = { shapes: tr[name].shapes || [], scaleFt: tr[name].scaleFt || 1, savedAt: tr[name].savedAt || new Date().toISOString() };
+  if (!setStore(st)) return false;
+  delete tr[name]; setTrash(tr);
+  refreshSketchList(); return true;
+}
+function emptyTrash(){
+  const n = Object.keys(getTrash()).length;
+  setTrash({});
+  refreshSketchList(); return n;
+}
 function refreshSketchList(){
   const st = getStore(), names = Object.keys(st);
   const si = document.getElementById("storageInfo");
-  if (si){ const info = storageInfo(); si.textContent = "💾 Storage: " + info.sketches + (info.sketches === 1 ? " sketch" : " sketches") + " · " + Math.max(1, Math.round(info.totalBytes / 102.4) / 10) + " KB used" + ((info.backupAvailable || info.currentBackupAvailable) ? " · backup ready" : " · no backup yet"); }
+  if (si){ const info = storageInfo(); si.textContent = "💾 Storage: " + info.sketches + (info.sketches === 1 ? " sketch" : " sketches") + " · " + Math.max(1, Math.round(info.totalBytes / 102.4) / 10) + " KB used" + ((info.backupAvailable || info.currentBackupAvailable) ? " · backup ready" : " · no backup yet") + (info.trashCount ? " · 🗑️ " + info.trashCount + " in trash" : ""); }
   const box = document.getElementById("sketchList");
-  if (!names.length){ box.innerHTML = '<p class="small" style="margin:8px 0 2px">No saved sketches yet.</p>'; return; }
   box.innerHTML = "";
+  if (!names.length){ box.innerHTML = '<p class="small" style="margin:8px 0 2px">No saved sketches yet.</p>'; }
   for (const nm of names){
     const row = document.createElement("div"); row.className = "sketch-row";
     const span = document.createElement("span"); span.className = "nm"; span.textContent = nm;
     const bLoad = document.createElement("button"); bLoad.className = "act"; bLoad.textContent = "📂 Load";
     bLoad.addEventListener("click", () => loadSketch(nm));
     const bDel = document.createElement("button"); bDel.className = "act danger"; bDel.textContent = "🗑️";
-    bDel.addEventListener("click", () => { const s2 = getStore(); delete s2[nm]; setStore(s2); refreshSketchList(); });
+    bDel.title = "Move to trash (restorable)";
+    bDel.addEventListener("click", () => deleteSketch(nm));
     row.append(span, bLoad, bDel); box.appendChild(row);
+  }
+  const trashNames = Object.keys(getTrash());
+  if (trashNames.length){
+    const hdr = document.createElement("p"); hdr.className = "small"; hdr.style.margin = "8px 0 2px";
+    hdr.textContent = "🗑️ Trash — deleted sketches (restore or purge)";
+    box.appendChild(hdr);
+    for (const nm of trashNames){
+      const row = document.createElement("div"); row.className = "sketch-row";
+      const span = document.createElement("span"); span.className = "nm"; span.textContent = nm;
+      const bRes = document.createElement("button"); bRes.className = "act"; bRes.textContent = "↩️ Restore";
+      bRes.addEventListener("click", () => restoreDeleted(nm));
+      const bPurge = document.createElement("button"); bPurge.className = "act danger"; bPurge.textContent = "✖";
+      bPurge.title = "Delete forever";
+      bPurge.addEventListener("click", () => { const tr = getTrash(); delete tr[nm]; setTrash(tr); refreshSketchList(); });
+      row.append(span, bRes, bPurge); box.appendChild(row);
+    }
   }
 }
 document.getElementById("btnSave").addEventListener("click", () => {
@@ -1717,7 +1847,7 @@ window.CADSketch = {
   addCircle(cx, cy, r){ pushHistory(); const s = { id: uid++, type: "circle", cx, cy, r }; shapes.push(s); render(); return s; },
   addText(x, y, text){ pushHistory(); const s = { id: uid++, type: "text", x, y, text }; shapes.push(s); render(); return s; },
   dimNumbers, dimLabel, areaNumbers, areaSelected, angleNumbers, angleSelected, totalsNumbers, totalsSketch, boundsNumbers, boundsSketch, midNumbers, midSketch, diagNumbers, diagSketch, ratioNumbers, ratioSketch, perimNumbers, perimSketch, coverNumbers, coverSketch, fillNumbers, fillSketch, gapNumbers, gapSketch, edgeNumbers, edgeSketch, spanNumbers, spanSketch, shortNumbers, shortSketch, diffNumbers, diffSketch, avgNumbers, avgSketch, smallNumbers, smallSketch, bigNumbers, bigSketch, rangeNumbers, rangeSketch, medianNumbers, medianSketch, avgLenNumbers, avgLenSketch, maxLenNumbers, maxLenSketch, minLenNumbers, minLenSketch, rangeLenNumbers, rangeLenSketch, medianLenNumbers, medianLenSketch, sumLenNumbers, sumLenSketch, wallLenNumbers, wallLenSketch, lineLenNumbers, lineLenSketch, avgWallNumbers, avgWallSketch, avgLineNumbers, avgLineSketch, typesNumbers, typesSketch, sketchStats, pxToFt, fmtFt,
-  shapeSnapPoints, collectSnapPoints, findObjectSnap, snapPointSmart, moveSnapCorrection, getSnapMarker(){ return snapMarker; }, snapDist: SNAP_DIST, saveSketch, loadSketch, storageInfo, restoreCurrentBackup, duplicateSelected, arraySelected, rotateSelected, rotateSelectedCCW, nudgeSelected, resizeSelected, squareSelected, snapSelected, centerSelected, resetView, fitView, focusSelected, keepSelectedOnly, bringToFrontSelected, sendToBackSelected, bringForwardSelected, sendBackwardSelected, originSelected, setSizeSelected, flipSelected, flipHSelected, flipVSelected, selectNext, setPositionSelected, setTextSelected,
+  shapeSnapPoints, collectSnapPoints, findObjectSnap, snapPointSmart, moveSnapCorrection, getSnapMarker(){ return snapMarker; }, snapDist: SNAP_DIST, saveSketch, loadSketch, storageInfo, restoreCurrentBackup, deleteSketch, restoreDeleted, emptyTrash, duplicateSelected, arraySelected, rotateSelected, rotateSelectedCCW, straightenSelected, nudgeSelected, resizeSelected, squareSelected, snapSelected, centerSelected, resetView, fitView, focusSelected, keepSelectedOnly, bringToFrontSelected, sendToBackSelected, bringForwardSelected, sendBackwardSelected, originSelected, setSizeSelected, flipSelected, flipHSelected, flipVSelected, selectNext, setPositionSelected, setTextSelected,
   measure(a, b){ const ft = pxToFt(Math.hypot(b.x - a.x, b.y - a.y)); lastMeasure = { ft, pts: [a, b] }; render(); return ft; },
   clear(){ shapes = []; selectedId = null; lastMeasure = null; render(); }
 };
