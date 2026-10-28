@@ -87,13 +87,22 @@ button.tool.on{box-shadow:0 0 0 1px var(--orange),0 0 14px rgba(255,122,26,.55);
 #canvasWrap{box-shadow:0 0 0 1px rgba(45,212,191,.14),0 8px 28px rgba(0,0,0,.5)}
 header{box-shadow:0 2px 18px rgba(255,122,26,.16)}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;animation:none!important}button.act:active{transform:none}}
+/* ---- UI polish (cycle 59): tidy phone util bar + compact nudge pad ---- */
+@media (max-width:640px){
+  #utilBar .switch{padding:5px 6px}
+  #utilBar input[type=number]{width:52px}
+  #utilBar #btnUndo,#utilBar #btnRedo{flex:1 1 40%;min-height:40px}
+  #actBar .row{grid-template-columns:repeat(4,1fr)}
+  #actBar button.act{grid-column:span 2}
+  #actBar #btnNudgeL,#actBar #btnNudgeU,#actBar #btnNudgeD,#actBar #btnNudgeR{grid-column:span 1}
+}
 </style>
 </head>
 <body>
 <header>
   <div class="logo">📐</div>
   <div>
-    <h1>📐 CADN8 <span id="verPill" style="font-size:10px;color:#0b1512;background:var(--gold);border-radius:999px;padding:2px 7px;vertical-align:middle;letter-spacing:.03em">v1.0.57</span></h1>
+    <h1>📐 CADN8 <span id="verPill" style="font-size:10px;color:#0b1512;background:var(--gold);border-radius:999px;padding:2px 7px;vertical-align:middle;letter-spacing:.03em">v1.0.59</span></h1>
     <p>Quick job-site sketches — rooms, decks, mounting walls</p>
   </div>
 </header>
@@ -227,7 +236,7 @@ header{box-shadow:0 2px 18px rgba(255,122,26,.16)}
 "use strict";
 /* ================= State ================= */
 const APP_NAME = "CADN8";
-const APP_VERSION = "1.0.57";          // bump patch each upgrade-loop cycle
+const APP_VERSION = "1.0.59";          // bump patch each upgrade-loop cycle
 const GRID = 40;                       // px per grid square
 let shapes = [];                       // drawing objects, world px coords
 let selectedId = null;
@@ -316,42 +325,42 @@ function boundsNumbers(list){ // whole-sketch envelope: combined bounds size + t
   return { count: src.length, xFt: pxToFt(minX), yFt: pxToFt(minY), wFt: pxToFt(maxX - minX), hFt: pxToFt(maxY - minY) };
 }
 function boundsSketch(){ return boundsNumbers(shapes); }
-function midNumbers(list){ // whole-sketch center point: middle of the combined bounds envelope, in feet
-  const b = boundsNumbers(list); if (!b) return null;
+function midNumbers(list, bPre){ // whole-sketch center point: middle of the combined bounds envelope, in feet — Speed (cycle 58): optional precomputed bounds
+  const b = bPre === undefined ? boundsNumbers(list) : bPre; if (!b) return null;
   return { count: b.count, xFt: b.xFt + b.wFt / 2, yFt: b.yFt + b.hFt / 2 };
 }
 function midSketch(){ return midNumbers(shapes); }
-function diagNumbers(list){ // whole-sketch diagonal: corner-to-corner distance of the combined bounds envelope, in feet
-  const b = boundsNumbers(list); if (!b) return null;
+function diagNumbers(list, bPre){ // whole-sketch diagonal: corner-to-corner distance of the combined bounds envelope, in feet — Speed (cycle 58): optional precomputed bounds
+  const b = bPre === undefined ? boundsNumbers(list) : bPre; if (!b) return null;
   return { count: b.count, diagFt: Math.hypot(b.wFt, b.hFt) };
 }
 function diagSketch(){ return diagNumbers(shapes); }
-function ratioNumbers(list){ // whole-sketch aspect ratio: width / height of the combined bounds envelope
-  const b = boundsNumbers(list); if (!b || !b.hFt) return null;
+function ratioNumbers(list, bPre){ // whole-sketch aspect ratio: width / height of the combined bounds envelope — Speed (cycle 58): optional precomputed bounds
+  const b = bPre === undefined ? boundsNumbers(list) : bPre; if (!b || !b.hFt) return null;
   return { count: b.count, ratio: b.wFt / b.hFt };
 }
 function ratioSketch(){ return ratioNumbers(shapes); }
-function perimNumbers(list){ // whole-sketch perimeter: distance around the combined bounds envelope, in feet
-  const b = boundsNumbers(list); if (!b) return null;
+function perimNumbers(list, bPre){ // whole-sketch perimeter: distance around the combined bounds envelope, in feet — Speed (cycle 58): optional precomputed bounds
+  const b = bPre === undefined ? boundsNumbers(list) : bPre; if (!b) return null;
   return { count: b.count, perimFt: 2 * (b.wFt + b.hFt) };
 }
 function perimSketch(){ return perimNumbers(shapes); }
-function coverNumbers(list){ // whole-sketch footprint area: area of the combined bounds envelope, in sq ft
-  const b = boundsNumbers(list); if (!b) return null;
+function coverNumbers(list, bPre){ // whole-sketch footprint area: area of the combined bounds envelope, in sq ft — Speed (cycle 58): optional precomputed bounds
+  const b = bPre === undefined ? boundsNumbers(list) : bPre; if (!b) return null;
   return { count: b.count, coverSqFt: b.wFt * b.hFt };
 }
 function coverSketch(){ return coverNumbers(shapes); }
-function fillNumbers(list){ // whole-sketch fill: share of the footprint envelope actually covered by shapes, as a percent
-  const b = boundsNumbers(list); if (!b) return null;
+function fillNumbers(list, bPre, tPre){ // whole-sketch fill: share of the footprint envelope actually covered by shapes, as a percent — Speed (cycle 58): optional precomputed bounds + totals
+  const b = bPre === undefined ? boundsNumbers(list) : bPre; if (!b) return null;
   const cover = b.wFt * b.hFt; if (!cover) return null;
-  const t = totalsNumbers(list);
+  const t = tPre === undefined ? totalsNumbers(list) : tPre;
   return { count: b.count, fillPct: t.areaSqFt / cover * 100 };
 }
 function fillSketch(){ return fillNumbers(shapes); }
-function gapNumbers(list){ // whole-sketch gap: open area inside the footprint envelope not covered by shapes, in sq ft
-  const b = boundsNumbers(list); if (!b) return null;
+function gapNumbers(list, bPre, tPre){ // whole-sketch gap: open area inside the footprint envelope not covered by shapes, in sq ft — Speed (cycle 58): optional precomputed bounds + totals
+  const b = bPre === undefined ? boundsNumbers(list) : bPre; if (!b) return null;
   const cover = b.wFt * b.hFt; if (!cover) return null;
-  const t = totalsNumbers(list);
+  const t = tPre === undefined ? totalsNumbers(list) : tPre;
   return { count: b.count, gapSqFt: cover - t.areaSqFt };
 }
 function gapSketch(){ return gapNumbers(shapes); }
@@ -366,18 +375,18 @@ function edgeNumbers(list){ // whole-sketch edge: total edge length of every sha
   return { count: src.length, edgeFt };
 }
 function edgeSketch(){ return edgeNumbers(shapes); }
-function spanNumbers(list){ // whole-sketch span: longest side of the combined bounds envelope, in ft — max(width, height)
-  const b = boundsNumbers(list); if (!b) return null;
+function spanNumbers(list, bPre){ // whole-sketch span: longest side of the combined bounds envelope, in ft — max(width, height) — Speed (cycle 58): optional precomputed bounds
+  const b = bPre === undefined ? boundsNumbers(list) : bPre; if (!b) return null;
   return { count: b.count, spanFt: Math.max(b.wFt, b.hFt) };
 }
 function spanSketch(){ return spanNumbers(shapes); }
-function shortNumbers(list){ // whole-sketch short side: shortest side of the combined bounds envelope, in ft — min(width, height)
-  const b = boundsNumbers(list); if (!b) return null;
+function shortNumbers(list, bPre){ // whole-sketch short side: shortest side of the combined bounds envelope, in ft — min(width, height) — Speed (cycle 58): optional precomputed bounds
+  const b = bPre === undefined ? boundsNumbers(list) : bPre; if (!b) return null;
   return { count: b.count, shortFt: Math.min(b.wFt, b.hFt) };
 }
 function shortSketch(){ return shortNumbers(shapes); }
-function diffNumbers(list){ // whole-sketch diff: gap between the longest and shortest sides of the combined bounds envelope, in ft — abs(width - height); 0 means the footprint is square
-  const b = boundsNumbers(list); if (!b) return null;
+function diffNumbers(list, bPre){ // whole-sketch diff: gap between the longest and shortest sides of the combined bounds envelope, in ft — abs(width - height); 0 means the footprint is square — Speed (cycle 58): optional precomputed bounds
+  const b = bPre === undefined ? boundsNumbers(list) : bPre; if (!b) return null;
   return { count: b.count, diffFt: Math.abs(b.wFt - b.hFt) };
 }
 function diffSketch(){ return diffNumbers(shapes); }
@@ -748,28 +757,28 @@ function render(){
   const bnd = boundsNumbers(shapes);
   setSt("stBounds", !bnd ? "—"
     : (Math.round(bnd.wFt * 10) / 10) + " × " + (Math.round(bnd.hFt * 10) / 10) + " ft");
-  const perim = perimNumbers(shapes);
+  const perim = perimNumbers(shapes, bnd);
   setSt("stPerim", !perim ? "—"
     : (Math.round(perim.perimFt * 10) / 10) + " ft around");
-  const cover = coverNumbers(shapes);
+  const cover = coverNumbers(shapes, bnd);
   setSt("stCover", !cover ? "—"
     : (Math.round(cover.coverSqFt * 10) / 10) + " sq ft footprint");
-  const fill = fillNumbers(shapes);
+  const fill = fillNumbers(shapes, bnd, tot);
   setSt("stFill", !fill ? "—"
     : (Math.round(fill.fillPct * 10) / 10) + "% filled");
-  const gap = gapNumbers(shapes);
+  const gap = gapNumbers(shapes, bnd, tot);
   setSt("stGap", !gap ? "—"
     : (Math.round(gap.gapSqFt * 10) / 10) + " sq ft open");
   const edge = edgeNumbers(shapes);
   setSt("stEdge", !edge ? "—"
     : (Math.round(edge.edgeFt * 10) / 10) + " ft edges");
-  const span = spanNumbers(shapes);
+  const span = spanNumbers(shapes, bnd);
   setSt("stSpan", !span ? "—"
     : (Math.round(span.spanFt * 10) / 10) + " ft span");
-  const short = shortNumbers(shapes);
+  const short = shortNumbers(shapes, bnd);
   setSt("stShort", !short ? "—"
     : (Math.round(short.shortFt * 10) / 10) + " ft short side");
-  const diff = diffNumbers(shapes);
+  const diff = diffNumbers(shapes, bnd);
   setSt("stDiff", !diff ? "—"
     : (Math.round(diff.diffFt * 10) / 10) + " ft diff");
   const avg = avgNumbers(shapes);
@@ -817,13 +826,13 @@ function render(){
   const avgLine = avgLineNumbers(shapes);
   setSt("stAvgLine", !avgLine ? "—"
     : (Math.round(avgLine.avgLineFt * 10) / 10) + " ft avg line");
-  const mid = midNumbers(shapes);
+  const mid = midNumbers(shapes, bnd);
   setSt("stMid", !mid ? "—"
     : (Math.round(mid.xFt * 10) / 10) + " ft, " + (Math.round(mid.yFt * 10) / 10) + " ft");
-  const diag = diagNumbers(shapes);
+  const diag = diagNumbers(shapes, bnd);
   setSt("stDiag", !diag ? "—"
     : (Math.round(diag.diagFt * 10) / 10) + " ft diagonal");
-  const ratio = ratioNumbers(shapes);
+  const ratio = ratioNumbers(shapes, bnd);
   setSt("stRatio", !ratio ? "—"
     : ratio.ratio.toFixed(2) + " : 1");
   setSt("stTypes", typesLabel(typesNumbers(shapes)));
