@@ -6,6 +6,13 @@
 <meta name="theme-color" content="#0b0f1a">
 <title>📐 CADN8 — Quick Job-Site CAD</title>
 <style>
+/* ===== CADN8 stylesheet map (Fix #10 hygiene) =====
+   Bands, in cascade order: shared base -> phone (<=640px) -> small (<=1023px) ->
+   tablet (641-1023px) -> desktop (>=1024px) -> short-landscape (max-height:540px).
+   Tool geography never changes across bands; only density does. Same-band blocks
+   from cycles 54+59 (phone) and 62+72 (desktop) are consolidated below. The tablet
+   blocks (76/78) and the <=1023 target block (77) intentionally stay separate:
+   their relative order resolves a real min-height conflict (44px wins). */
 :root{
   --bg:#0b0f1a; --bg2:#121828; --card:#171f36; --card2:#1e2947;
   --ink:#f4f7ff; --muted:#a8b3cf; --line:#2a3557;
@@ -78,6 +85,13 @@ button.tool:focus-visible,button.act:focus-visible,input:focus-visible,.switch:f
   #actBar .row{display:grid;grid-template-columns:1fr 1fr;gap:6px}
   #actBar button.act{width:100%;min-height:40px}
   #actBar .lbl{grid-column:1/-1;text-align:center;padding-top:2px}
+  /* consolidated from cycle 59 (Fix #10): tidy phone util bar + compact nudge pad */
+  #utilBar .switch{padding:5px 6px}
+  #utilBar input[type=number]{width:52px}
+  #utilBar #btnUndo,#utilBar #btnRedo{flex:1 1 40%;min-height:40px}
+  #actBar .row{grid-template-columns:repeat(4,1fr)}
+  #actBar button.act{grid-column:span 2}
+  #actBar #btnNudgeL,#actBar #btnNudgeU,#actBar #btnNudgeD,#actBar #btnNudgeR{grid-column:span 1}
 }
 /* ---- Effects (cycle 55): glows + transitions, reduced-motion safe ---- */
 button.tool,button.act,.switch,#status .pill,.sketch-row{transition:background-color .15s ease,border-color .15s ease,box-shadow .15s ease,transform .1s ease}
@@ -87,21 +101,16 @@ button.tool.on{box-shadow:0 0 0 1px var(--orange),0 0 14px rgba(255,122,26,.55);
 #canvasWrap{box-shadow:0 0 0 1px rgba(45,212,191,.14),0 8px 28px rgba(0,0,0,.5)}
 header{box-shadow:0 2px 18px rgba(255,122,26,.16)}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;animation:none!important}button.act:active{transform:none}}
-/* ---- UI polish (cycle 59): tidy phone util bar + compact nudge pad ---- */
-@media (max-width:640px){
-  #utilBar .switch{padding:5px 6px}
-  #utilBar input[type=number]{width:52px}
-  #utilBar #btnUndo,#utilBar #btnRedo{flex:1 1 40%;min-height:40px}
-  #actBar .row{grid-template-columns:repeat(4,1fr)}
-  #actBar button.act{grid-column:span 2}
-  #actBar #btnNudgeL,#actBar #btnNudgeU,#actBar #btnNudgeD,#actBar #btnNudgeR{grid-column:span 1}
-}
 /* ---- UI polish (cycle 62): tidy desktop action sidebar ---- */
 @media (min-width:1024px){
   #actBar .row{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
   #actBar button.act{grid-column:span 2;width:100%;min-height:40px}
   #actBar .lbl{grid-column:1/-1;padding-top:4px}
   #actBar #btnNudgeL,#actBar #btnNudgeU,#actBar #btnNudgeD,#actBar #btnNudgeR{grid-column:span 1}
+  /* consolidated from cycle 72 (Fix #10): tidy desktop util bar */
+  #utilBar .row{flex-wrap:nowrap}
+  #utilBar #btnUndo{margin-left:auto}
+  #utilBar #btnUndo,#utilBar #btnRedo{flex:0 0 112px;min-width:112px;min-height:40px}
 }
 /* ---- Effects (cycle 63): canvas glow breathing + entrance fade-up + sketch-row hover lift, reduced-motion safe ---- */
 /* CSS-only: no JS, no canvas redraw cost. The cycle-55 global reduced-motion rule already kills these animations. */
@@ -137,13 +146,6 @@ header{box-shadow:0 2px 18px rgba(255,122,26,.16)}
 #btnSave{animation:cadSaveGlow 2.6s ease-in-out infinite alternate}
 @keyframes cadSaveGlow{from{box-shadow:0 0 0 rgba(45,212,191,0)}to{box-shadow:0 0 14px rgba(45,212,191,.55)}}
 #status .pill:hover{border-color:var(--gold);transform:translateY(-1px)}
-/* ---- UI polish (cycle 72): tidy desktop util bar ---- */
-/* CSS only, no JS/API change. Before (measured at 1280px): the util bar spanned 846px but Undo/Redo were small 67/66px x 36px buttons clustered at the left, ending at x=556 and leaving ~290px of empty trailing space, while every other desktop bar uses 40px targets. Now at >=1024px the view toggles + scale stay grouped at the left and Undo/Redo sit at the right edge as equal 112px x 40px targets, matching the actBar/save/export standard. Phone (cycle 59 two-row util layout) and tablet widths are unchanged; the approved stage layouts (cycle 37 phone rail, cycle 46 desktop grid areas) are untouched. */
-@media (min-width:1024px){
-  #utilBar .row{flex-wrap:nowrap}
-  #utilBar #btnUndo{margin-left:auto}
-  #utilBar #btnUndo,#utilBar #btnRedo{flex:0 0 112px;min-width:112px;min-height:40px}
-}
 /* ---- Responsive (cycle 76 / Fix #1): tablet breakpoint 641-1023px ---- */
 /* CSS only, no JS/API change. Before: 641-1023px fell through to base styles (46px rail, flex actBar, unbounded pill wrap) - a stretched phone layout. Now the tablet band gets the desktop rail spec (56px labeled buttons), a 3-column action grid under the canvas, and a status strip capped at two visible rows (scrolls for the rest). Tool order/side unchanged; phone (<=640) and desktop (>=1024) untouched. */
 @media (min-width:641px) and (max-width:1023px){
@@ -205,13 +207,43 @@ body{min-height:100vh;min-height:100dvh}
   canvas{height:100%}
   #status{flex:0 0 auto;flex-wrap:nowrap}
 }
+/* ---- Responsive (manual batch / Fixes #6-#9): thumb-zone bar, landscape phone, gesture sweep, shortcut chips ---- */
+/* Fix #8 [All] gesture-conflict sweep: page can never pull-to-refresh or overscroll-chain; bars don't text-select or flash a tap highlight; the pill strip is a deliberate horizontal scroller; the canvas keeps its existing touch-action:none (drawing strokes never scroll the page). */
+html,body{overscroll-behavior:none}
+body{-webkit-tap-highlight-color:transparent}
+#status{touch-action:pan-x}
+#toolBar,#actBar,#utilBar,#status{user-select:none;-webkit-user-select:none}
+/* Fix #9 [Desktop] shortcut chips: the actBar buttons carry their real key bindings (handler-verified: A/R/⇧R/G/+/-/Q/S/C/F/B/]/[/O/E/H/V/Tab/P/T/0/9/L/K/Del) as small chips, visible only at desktop width - the Shapr3D/SketchUp convention. Markup-only spans; no behavior change, hidden below 1024px so phone/tablet layouts are byte-identical in layout. */
+.key{display:none}
+@media (min-width:1024px){
+  .key{display:inline-block;font-size:9px;font-weight:800;color:var(--gold);border:1px solid var(--line);border-radius:5px;padding:1px 4px;margin-left:2px;vertical-align:1px;letter-spacing:.02em}
+}
+/* Fix #6 [Phone] thumb-zone action strip: at <=640px #actBar becomes a compact horizontally-scrollable strip (one 44px row, right-edge fade as the overflow cue) stuck to the bottom of the viewport, so a selected shape's actions (Duplicate, Rotate, Nudge, Delete...) are always in the thumb zone - the Floor Plan Creator contextual-toolbar pattern. V1 pinned the whole 788px panel and covered the canvas + intercepted rail clicks (caught by the regression harness); the strip is ~62px tall and covers nothing. Bottom padding is safe-area aware (builds on Fix #4). */
+@media (max-width:640px){
+  #actBar{position:sticky;bottom:0;z-index:30;box-shadow:0 -6px 18px rgba(0,0,0,.45);padding-bottom:calc(6px + env(safe-area-inset-bottom,0px))}
+  #actBar .row{display:flex;flex-wrap:nowrap;overflow-x:auto;gap:6px;-webkit-overflow-scrolling:touch;-webkit-mask-image:linear-gradient(90deg,#000 93%,transparent);mask-image:linear-gradient(90deg,#000 93%,transparent)}
+  #actBar button.act{flex:0 0 auto;width:auto;grid-column:auto;min-height:44px;white-space:nowrap}
+  #actBar .lbl{flex:0 0 auto;align-self:center;grid-column:auto}
+}
+/* Fix #7 [Phone+Tablet] landscape-phone layout: at landscape with a short viewport (max-height:540px) the header collapses to one compact row (subtitle hidden), the stage is capped to the dynamic viewport height so the canvas fits the short screen beside the rail, and the action sidebar (tablet band) scrolls internally instead of stretching the page - uMake's turn-the-phone-sideways mode. V1 overrode main's display and blew the tablet grid out to 2291px wide (caught in verification); V2 leaves each band's main layout (block / tablet grid / desktop grid) untouched and only caps heights. */
+@media (orientation:landscape) and (max-height:540px){
+  header{padding-top:4px;padding-bottom:4px}
+  header p{display:none}
+  header h1{font-size:17px}
+  #stage{height:calc(100vh - 46px);height:calc(100dvh - 46px)}
+  #stageMain{min-height:0}
+  #canvasWrap{flex:1 1 auto;min-height:120px}
+  canvas{height:100%}
+  #status{flex:0 0 auto;flex-wrap:nowrap;overflow-x:auto}
+  #actBar{max-height:calc(100vh - 46px);max-height:calc(100dvh - 46px);overflow-y:auto}
+}
 </style>
 </head>
 <body>
 <header>
   <div class="logo">📐</div>
   <div>
-    <h1>📐 CADN8 <span id="verPill" style="font-size:10px;color:#0b1512;background:var(--gold);border-radius:999px;padding:2px 7px;vertical-align:middle;letter-spacing:.03em">v1.0.80</span></h1>
+    <h1>📐 CADN8 <span id="verPill" style="font-size:10px;color:#0b1512;background:var(--gold);border-radius:999px;padding:2px 7px;vertical-align:middle;letter-spacing:.03em">v1.0.81</span></h1>
     <p>Quick job-site sketches — rooms, decks, mounting walls</p>
   </div>
 </header>
@@ -284,37 +316,37 @@ body{min-height:100vh;min-height:100dvh}
 
   <div class="bar" id="actBar">
     <div class="row">
-      <button class="act danger" id="btnDelete" title="Delete selected">🗑️ Delete</button>
+      <button class="act danger" id="btnDelete" title="Delete selected">🗑️ Delete <span class="key">Del</span></button>
       <button class="act" id="btnDup" title="Duplicate the selected shape (offset copy)">⧉ Duplicate</button>
-      <button class="act" id="btnArraySel" title="Array the selected shape: step out extra copies in a row to the right, one square apart, in one Undo step (A key)">⧉→ Array</button>
-      <button class="act" id="btnRotate" title="Rotate the selected shape 90 degrees around its center">↻ Rotate 90°</button>
-      <button class="act" id="btnRotateCCW" title="Rotate the selected shape 90 degrees counter-clockwise around its center (Shift+R key)">↺ Rotate −90°</button>
-      <button class="act" id="btnStraightenSel" title="Straighten the selected line or wall to level (horizontal) or plumb (vertical), whichever is nearer — keeps its length and center (G key)">📏 Straighten</button>
-      <button class="act" id="btnGrow" title="Grow the selected shape by one square around its center (+ key)">⤢ Grow</button>
-      <button class="act" id="btnShrink" title="Shrink the selected shape by one square around its center (− key)">⤡ Shrink</button>
-      <button class="act" id="btnSquareSel" title="Make the selected rectangle square — both sides become its longest side, around its center (Q key)">⬜ Square</button>
-      <button class="act" id="btnSnapSel" title="Snap the selected shape to the nearest grid square (S key)">⊞ Snap</button>
-      <button class="act" id="btnCenterSel" title="Center the selected shape in the current view (C key)">◎ Center</button>
-      <button class="act" id="btnFrontSel" title="Bring the selected shape to the front, on top of overlapping shapes (F key)">⤒ Front</button>
-      <button class="act" id="btnBackSel" title="Send the selected shape to the back, behind overlapping shapes (B key)">⤓ Back</button>
-      <button class="act" id="btnForwardSel" title="Bring the selected shape one layer forward, swapping with the shape just above it (] key)">↑ Forward</button>
-      <button class="act" id="btnBackwardSel" title="Send the selected shape one layer backward, swapping with the shape just below it ([ key)">↓ Backward</button>
-      <button class="act" id="btnOriginSel" title="Move the selected shape so its top-left lands on the origin (0,0) (O key)">⌂ Origin</button>
-      <button class="act" id="btnExactSel" title="Set the selected shape to an exact size in feet (E key)">📐 Exact Size</button>
-      <button class="act" id="btnFlipH" title="Flip the selected shape horizontally, mirrored around its center (H key)">⇋ Flip H</button>
-      <button class="act" id="btnFlipV" title="Flip the selected shape vertically, mirrored around its center (V key)">⇅ Flip V</button>
-      <button class="act" id="btnNextSel" title="Select the next shape in the sketch (Tab key; Shift+Tab for previous)">⏭ Next Shape</button>
-      <button class="act" id="btnPosSel" title="Move the selected shape to an exact position in feet (P key)">📍 Exact Pos</button>
-      <button class="act" id="btnEditTextSel" title="Edit the text of the selected label (T key)">✏️ Edit Label</button>
+      <button class="act" id="btnArraySel" title="Array the selected shape: step out extra copies in a row to the right, one square apart, in one Undo step (A key)">⧉→ Array <span class="key">A</span></button>
+      <button class="act" id="btnRotate" title="Rotate the selected shape 90 degrees around its center">↻ Rotate 90° <span class="key">R</span></button>
+      <button class="act" id="btnRotateCCW" title="Rotate the selected shape 90 degrees counter-clockwise around its center (Shift+R key)">↺ Rotate −90° <span class="key">⇧R</span></button>
+      <button class="act" id="btnStraightenSel" title="Straighten the selected line or wall to level (horizontal) or plumb (vertical), whichever is nearer — keeps its length and center (G key)">📏 Straighten <span class="key">G</span></button>
+      <button class="act" id="btnGrow" title="Grow the selected shape by one square around its center (+ key)">⤢ Grow <span class="key">+</span></button>
+      <button class="act" id="btnShrink" title="Shrink the selected shape by one square around its center (− key)">⤡ Shrink <span class="key">−</span></button>
+      <button class="act" id="btnSquareSel" title="Make the selected rectangle square — both sides become its longest side, around its center (Q key)">⬜ Square <span class="key">Q</span></button>
+      <button class="act" id="btnSnapSel" title="Snap the selected shape to the nearest grid square (S key)">⊞ Snap <span class="key">S</span></button>
+      <button class="act" id="btnCenterSel" title="Center the selected shape in the current view (C key)">◎ Center <span class="key">C</span></button>
+      <button class="act" id="btnFrontSel" title="Bring the selected shape to the front, on top of overlapping shapes (F key)">⤒ Front <span class="key">F</span></button>
+      <button class="act" id="btnBackSel" title="Send the selected shape to the back, behind overlapping shapes (B key)">⤓ Back <span class="key">B</span></button>
+      <button class="act" id="btnForwardSel" title="Bring the selected shape one layer forward, swapping with the shape just above it (] key)">↑ Forward <span class="key">]</span></button>
+      <button class="act" id="btnBackwardSel" title="Send the selected shape one layer backward, swapping with the shape just below it ([ key)">↓ Backward <span class="key">[</span></button>
+      <button class="act" id="btnOriginSel" title="Move the selected shape so its top-left lands on the origin (0,0) (O key)">⌂ Origin <span class="key">O</span></button>
+      <button class="act" id="btnExactSel" title="Set the selected shape to an exact size in feet (E key)">📐 Exact Size <span class="key">E</span></button>
+      <button class="act" id="btnFlipH" title="Flip the selected shape horizontally, mirrored around its center (H key)">⇋ Flip H <span class="key">H</span></button>
+      <button class="act" id="btnFlipV" title="Flip the selected shape vertically, mirrored around its center (V key)">⇅ Flip V <span class="key">V</span></button>
+      <button class="act" id="btnNextSel" title="Select the next shape in the sketch (Tab key; Shift+Tab for previous)">⏭ Next Shape <span class="key">Tab</span></button>
+      <button class="act" id="btnPosSel" title="Move the selected shape to an exact position in feet (P key)">📍 Exact Pos <span class="key">P</span></button>
+      <button class="act" id="btnEditTextSel" title="Edit the text of the selected label (T key)">✏️ Edit Label <span class="key">T</span></button>
       <span class="lbl" title="Nudge the selected shape">Nudge</span>
       <button class="act" id="btnNudgeL" title="Nudge selected shape left (arrow keys work too; Shift = a full square)">◀</button>
       <button class="act" id="btnNudgeU" title="Nudge selected shape up (arrow keys work too; Shift = a full square)">▲</button>
       <button class="act" id="btnNudgeD" title="Nudge selected shape down (arrow keys work too; Shift = a full square)">▼</button>
       <button class="act" id="btnNudgeR" title="Nudge selected shape right (arrow keys work too; Shift = a full square)">▶</button>
-      <button class="act" id="btnResetView" title="Reset the pan view back to the origin (0 key)">🧭 Reset View</button>
-      <button class="act" id="btnFitView" title="Fit the whole sketch in the view, centered (9 key)">🔍 Fit View</button>
-      <button class="act" id="btnFocusSel" title="Focus the view on the selected shape, centered without moving it (L key)">🎯 Focus</button>
-      <button class="act" id="btnKeepSel" title="Keep only the selected shape, deleting every other shape (K key)">⭐ Keep Only</button>
+      <button class="act" id="btnResetView" title="Reset the pan view back to the origin (0 key)">🧭 Reset View <span class="key">0</span></button>
+      <button class="act" id="btnFitView" title="Fit the whole sketch in the view, centered (9 key)">🔍 Fit View <span class="key">9</span></button>
+      <button class="act" id="btnFocusSel" title="Focus the view on the selected shape, centered without moving it (L key)">🎯 Focus <span class="key">L</span></button>
+      <button class="act" id="btnKeepSel" title="Keep only the selected shape, deleting every other shape (K key)">⭐ Keep Only <span class="key">K</span></button>
       <button class="act" id="btnRoom" title="Insert a 12 by 16 foot room outline">🏠 Room 12×16</button>
       <button class="act danger" id="btnClear" title="Clear the whole sketch">🧹 Clear</button>
     </div>
@@ -347,7 +379,7 @@ body{min-height:100vh;min-height:100dvh}
 "use strict";
 /* ================= State ================= */
 const APP_NAME = "CADN8";
-const APP_VERSION = "1.0.80";          // bump patch each upgrade-loop cycle
+const APP_VERSION = "1.0.81";          // bump patch each upgrade-loop cycle
 const GRID = 40;                       // px per grid square
 let shapes = [];                       // drawing objects, world px coords
 let selectedId = null;
