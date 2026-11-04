@@ -195,13 +195,23 @@ body{min-height:100vh;min-height:100dvh}
   header{padding-left:max(10px,env(safe-area-inset-left,0px));padding-right:max(10px,env(safe-area-inset-right,0px))}
   main{padding-left:max(6px,env(safe-area-inset-left,0px));padding-right:max(6px,env(safe-area-inset-right,0px))}
 }
+/* ---- Responsive (cycle 80 / Fix #5): canvas-dominant portrait phone ---- */
+/* CSS only, no JS/API change. Before: on portrait phones the canvas was a fixed 64vh slice (540px on an 844px-tall phone, 427px at 667px), so the stage ended ~97px short of the fold on tall phones and shrank hard on short ones, wasting first-screen space either way. Now at <=640px portrait the layout is a flex column: main stacks as a column, #stage is sized to exactly the dynamic viewport minus the sticky header (48px) and main's top padding (6px), header and #utilBar keep their natural height, #canvasWrap flexes to take ALL leftover stage height, the canvas fills its wrap (height:100%, replacing the 64vh rule in this band), and #status stays the one scrollable row from cycle 54 (flex:0 0 auto, nowrap). #actBar sits compact below the stage as before (its grid is unchanged); tablet (641-1023, incl. landscape phones over 640px wide) and desktop layouts untouched, as is the <=640 landscape band (Fix #7 territory). No reduced-motion handling added. */
+@media (max-width:640px) and (orientation:portrait){
+  main{display:flex;flex-direction:column}
+  #stage{flex:0 0 auto;height:calc(100vh - 54px);height:calc(100dvh - 54px)}
+  #stageMain{min-height:0}
+  #canvasWrap{flex:1 1 auto;min-height:240px}
+  canvas{height:100%}
+  #status{flex:0 0 auto;flex-wrap:nowrap}
+}
 </style>
 </head>
 <body>
 <header>
   <div class="logo">📐</div>
   <div>
-    <h1>📐 CADN8 <span id="verPill" style="font-size:10px;color:#0b1512;background:var(--gold);border-radius:999px;padding:2px 7px;vertical-align:middle;letter-spacing:.03em">v1.0.79</span></h1>
+    <h1>📐 CADN8 <span id="verPill" style="font-size:10px;color:#0b1512;background:var(--gold);border-radius:999px;padding:2px 7px;vertical-align:middle;letter-spacing:.03em">v1.0.80</span></h1>
     <p>Quick job-site sketches — rooms, decks, mounting walls</p>
   </div>
 </header>
@@ -337,7 +347,7 @@ body{min-height:100vh;min-height:100dvh}
 "use strict";
 /* ================= State ================= */
 const APP_NAME = "CADN8";
-const APP_VERSION = "1.0.79";          // bump patch each upgrade-loop cycle
+const APP_VERSION = "1.0.80";          // bump patch each upgrade-loop cycle
 const GRID = 40;                       // px per grid square
 let shapes = [];                       // drawing objects, world px coords
 let selectedId = null;
