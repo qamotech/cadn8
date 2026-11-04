@@ -144,13 +144,64 @@ header{box-shadow:0 2px 18px rgba(255,122,26,.16)}
   #utilBar #btnUndo{margin-left:auto}
   #utilBar #btnUndo,#utilBar #btnRedo{flex:0 0 112px;min-width:112px;min-height:40px}
 }
+/* ---- Responsive (cycle 76 / Fix #1): tablet breakpoint 641-1023px ---- */
+/* CSS only, no JS/API change. Before: 641-1023px fell through to base styles (46px rail, flex actBar, unbounded pill wrap) - a stretched phone layout. Now the tablet band gets the desktop rail spec (56px labeled buttons), a 3-column action grid under the canvas, and a status strip capped at two visible rows (scrolls for the rest). Tool order/side unchanged; phone (<=640) and desktop (>=1024) untouched. */
+@media (min-width:641px) and (max-width:1023px){
+  #toolBar button.tool{min-width:56px;font-size:17px;padding:8px 4px}
+  #toolBar button.tool .tl{display:block;font-size:10px}
+  #actBar .row{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+  #actBar button.act{width:100%;min-height:40px}
+  #actBar .lbl{grid-column:1/-1;text-align:center;padding-top:2px}
+  #status{flex-wrap:wrap;max-height:66px;overflow-y:auto;overflow-x:hidden}
+}
+/* ---- Responsive (cycle 77 / Fix #2): 44px touch targets below 1024px ---- */
+/* CSS only, no JS/API change. Before (measured): phone/tablet targets were 34-40px (tool rail 40x36, switch/scale/name inputs 36, sketch-row buttons 36x34, act/save/export/util buttons 36-40) with 5px gaps - under the 44px platform minimum. Now at <=1023px every button, text/number input, switch and sketch-row target is >=44px tall, icon-only sketch-row buttons are >=44px wide, and bar/rail/status gaps are >=6px. ID-level overrides are included so the earlier 40px phone/tablet rules (actBar, util Undo/Redo, save/export) step up too. The rail min-width bump is phone-only so the cycle-76 tablet rail keeps its 56px desktop spec. Desktop (>=1024px) keeps its current 36/40px density; tool order/side unchanged. */
+@media (max-width:1023px){
+  button.tool,button.act{min-height:44px}
+  #toolBar button.tool{min-height:44px}
+  #actBar button.act{min-height:44px}
+  #utilBar #btnUndo,#utilBar #btnRedo{min-height:44px}
+  #saveBar #btnSave{min-height:44px}
+  #saveBar #sketchName{min-height:44px}
+  #exportBar button.act{min-height:44px}
+  input[type=number],input[type=text]{min-height:44px}
+  .switch{min-height:44px}
+  .sketch-row button{min-height:44px;min-width:44px}
+  .bar .row{gap:6px}
+  #toolBar{gap:6px}
+  #status{gap:6px}
+}
+@media (max-width:640px){
+  #toolBar button.tool{min-width:44px}
+}
+/* ---- Responsive (cycle 78 / Fix #3): tablet two-pane sidebar 641-1023px ---- */
+/* CSS only, no JS/API change. Before: at tablet the #actBar sat in a 3-column grid under the canvas (cycle 76), so the tablet was a stretched phone. Now the tablet band reuses the cycle-46 desktop grid at a narrower 264px sidebar: main becomes a two-column grid (stage left, #actBar right), #saveBar/#exportBar span full width below. Inside the sidebar the action row mirrors the desktop sidebar (cycle 62): 4-col grid, buttons span 2 (= 2 per row), Nudge pad spans 1 each (= 4 across), label full row; min-height stays 44px per Fix #2. Tool order/side unchanged; phone (<=640) and desktop (>=1024, 322px sidebar) untouched. */
+@media (min-width:641px) and (max-width:1023px){
+  main{display:grid;grid-template-columns:minmax(0,1fr) 264px;grid-template-areas:"stage act" "save save" "export export";gap:8px;align-items:start}
+  #stage{grid-area:stage;margin:0;min-width:0}
+  #actBar{grid-area:act;margin:0}
+  #saveBar{grid-area:save;margin:0}
+  #exportBar{grid-area:export;margin:0}
+  #actBar .row{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+  #actBar button.act{grid-column:span 2;width:100%;min-height:44px}
+  #actBar .lbl{grid-column:1/-1;text-align:center;padding-top:4px}
+  #actBar #btnNudgeL,#actBar #btnNudgeU,#actBar #btnNudgeD,#actBar #btnNudgeR{grid-column:span 1}
+}
+/* ---- Responsive (cycle 79 / Fix #4): safe-area + dynamic viewport hardening ---- */
+/* CSS only, no JS/API change. Before: the viewport meta already carried viewport-fit=cover, but nothing consumed the safe-area insets and the app column had no viewport height, so on notched phones the lowest bar (#exportBar) could sit under the home indicator and mobile URL-bar show/hide could shift the page height (100vh problem). Now: body (the app column: sticky header + main) is min-height:100vh with a 100dvh override where supported, so its height tracks the dynamic viewport; #exportBar, the lowest bar, gains env(safe-area-inset-bottom) on top of its 6px base padding; in landscape below 1024px, header and main side padding become inset-aware via max() against their base values (10px header / 6px main), so landscape notch cutouts never cover content. Where insets are 0 (desktop, headless, non-notched devices) every computed value is identical to before - nothing moves. Tool order/side and the cycle-37/46/78 layouts are untouched; no reduced-motion handling added. */
+body{min-height:100vh;min-height:100dvh}
+#exportBar{padding-bottom:calc(6px + env(safe-area-inset-bottom,0px))}
+@media (orientation:landscape) and (max-width:1023px){
+  header{padding-left:max(10px,env(safe-area-inset-left,0px));padding-right:max(10px,env(safe-area-inset-right,0px))}
+  main{padding-left:max(6px,env(safe-area-inset-left,0px));padding-right:max(6px,env(safe-area-inset-right,0px))}
+}
 </style>
 </head>
 <body>
 <header>
   <div class="logo">📐</div>
   <div>
-    <h1>📐 CADN8 <span id="verPill" style="font-size:10px;color:#0b1512;background:var(--gold);border-radius:999px;padding:2px 7px;vertical-align:middle;letter-spacing:.03em">v1.0.74</span></h1>
+    <h1>📐 CADN8 <span id="verPill" style="font-size:10px;color:#0b1512;background:var(--gold);border-radius:999px;padding:2px 7px;vertical-align:middle;letter-spacing:.03em">v1.0.79</span></h1>
     <p>Quick job-site sketches — rooms, decks, mounting walls</p>
   </div>
 </header>
@@ -286,7 +337,7 @@ header{box-shadow:0 2px 18px rgba(255,122,26,.16)}
 "use strict";
 /* ================= State ================= */
 const APP_NAME = "CADN8";
-const APP_VERSION = "1.0.75";          // bump patch each upgrade-loop cycle
+const APP_VERSION = "1.0.79";          // bump patch each upgrade-loop cycle
 const GRID = 40;                       // px per grid square
 let shapes = [];                       // drawing objects, world px coords
 let selectedId = null;
